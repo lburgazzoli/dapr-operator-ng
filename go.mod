@@ -3,7 +3,7 @@ module github.com/lburgazzoli/dapr-operator-ng
 go 1.20
 
 require (
-	github.com/evanphx/json-patch v4.12.0+incompatible
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.4
 	github.com/onsi/gomega v1.27.10
 	github.com/openshift/api v0.0.0-20230809121144-3278705b3ada
