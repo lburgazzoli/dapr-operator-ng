@@ -41,13 +41,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewDaprReconciler(manager ctrl.Manager) (*DaprReconciler, error) {
+func NewReconciler(manager ctrl.Manager) (*Reconciler, error) {
 	c, err := client.NewClient(manager.GetConfig(), manager.GetScheme(), manager.GetClient())
 	if err != nil {
 		return nil, err
 	}
 
-	rec := DaprReconciler{}
+	rec := Reconciler{}
 	rec.l = ctrl.Log.WithName("controller")
 	rec.Client = c
 	rec.Scheme = manager.GetScheme()
@@ -64,7 +64,7 @@ func NewDaprReconciler(manager ctrl.Manager) (*DaprReconciler, error) {
 	return &rec, nil
 }
 
-type DaprReconciler struct {
+type Reconciler struct {
 	*client.Client
 
 	Scheme      *runtime.Scheme
@@ -77,7 +77,7 @@ type DaprReconciler struct {
 //+kubebuilder:rbac:groups=dapr.dapr.io,resources=daprs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=dapr.dapr.io,resources=daprs/finalizers,verbs=update
 
-func (r *DaprReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
 	l.Info("Reconciling", "resource", req.NamespacedName.String())
 
@@ -196,7 +196,7 @@ func (r *DaprReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *DaprReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	c := ctrl.NewControllerManagedBy(mgr)
 
 	c = c.For(&daprv1alpha1.Dapr{}, builder.WithPredicates(

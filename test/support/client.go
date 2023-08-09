@@ -25,6 +25,7 @@ type Client struct {
 	Discovery discovery.DiscoveryInterface
 	Route     route.Interface
 
+	//nolint:unused
 	scheme *runtime.Scheme
 	config *rest.Config
 }

@@ -35,7 +35,7 @@ func NewRunCmd() *cobra.Command {
 		Short: "run",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return controller.Start(options, func(manager manager.Manager, opts controller.Options) error {
-				rec, err := daprCtl.NewDaprReconciler(manager)
+				rec, err := daprCtl.NewReconciler(manager)
 				if err != nil {
 					return err
 				}
