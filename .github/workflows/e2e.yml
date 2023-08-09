@@ -24,7 +24,7 @@ jobs:
           echo $IMG
           echo "image=${IMG}" >> "$GITHUB_OUTPUT"
           
-          make docker-build docker-push
+          make docker/build docker/push
   e2e:
     runs-on: ubuntu-latest
     needs:

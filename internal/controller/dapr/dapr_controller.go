@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	"github.com/go-logr/logr"
-	daprv1alpha1 "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
+	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/defaults"
@@ -69,7 +69,7 @@ type Reconciler struct {
 
 	Scheme      *runtime.Scheme
 	ClusterType controller.ClusterType
-	actions     []controller.Action[daprv1alpha1.Dapr]
+	actions     []controller.Action[daprvApi.Dapr]
 	l           logr.Logger
 }
 
@@ -81,14 +81,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	l := log.FromContext(ctx)
 	l.Info("Reconciling", "resource", req.NamespacedName.String())
 
-	rr := controller.ReconciliationRequest[daprv1alpha1.Dapr]{
+	rr := controller.ReconciliationRequest[daprvApi.Dapr]{
 		Client: r.Client,
 		NamespacedName: types.NamespacedName{
 			Name:      req.Name,
 			Namespace: req.Namespace,
 		},
 		ClusterType: r.ClusterType,
-		Resource:    &daprv1alpha1.Dapr{},
+		Resource:    &daprvApi.Dapr{},
 	}
 
 	err := r.Get(ctx, req.NamespacedName, rr.Resource)
@@ -199,7 +199,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 	c := ctrl.NewControllerManagedBy(mgr)
 
-	c = c.For(&daprv1alpha1.Dapr{}, builder.WithPredicates(
+	c = c.For(&daprvApi.Dapr{}, builder.WithPredicates(
 		predicate.Or(
 			predicate.GenerationChangedPredicate{},
 		)))

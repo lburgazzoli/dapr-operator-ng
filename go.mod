@@ -3,15 +3,15 @@ module github.com/lburgazzoli/dapr-operator-ng
 go 1.20
 
 require (
-	github.com/evanphx/json-patch v4.12.0+incompatible
+	github.com/evanphx/json-patch v5.6.0+incompatible
 	github.com/go-logr/logr v1.2.4
 	github.com/onsi/gomega v1.27.10
 	github.com/openshift/api v0.0.0-20230809121144-3278705b3ada
 	github.com/openshift/client-go v0.0.0-20230807132528-be5346fb33cb
 	github.com/pkg/errors v0.9.1
 	github.com/rs/xid v1.5.0
-	github.com/spf13/cobra v1.6.0
-	github.com/stretchr/testify v1.8.1
+	github.com/spf13/cobra v1.6.1
+	github.com/stretchr/testify v1.8.2
 	go.uber.org/multierr v1.6.0
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
@@ -19,13 +19,14 @@ require (
 	k8s.io/klog/v2 v2.100.1
 	sigs.k8s.io/controller-runtime v0.15.0
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3
+	helm.sh/helm/v3 v3.12.2
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
@@ -39,7 +40,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
-	github.com/imdario/mergo v0.3.6 // indirect
+	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
