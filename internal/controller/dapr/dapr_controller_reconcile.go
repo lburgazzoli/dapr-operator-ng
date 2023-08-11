@@ -21,7 +21,6 @@ import (
 	"sort"
 
 	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/defaults"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
@@ -39,7 +38,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	l := log.FromContext(ctx)
 	l.Info("Reconciling", "resource", req.NamespacedName.String())
 
-	rr := controller.ReconciliationRequest[daprvApi.Dapr]{
+	rr := ReconciliationRequest{
 		Client: r.Client,
 		NamespacedName: types.NamespacedName{
 			Name:      req.Name,
@@ -47,6 +46,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		},
 		ClusterType: r.ClusterType,
 		Resource:    &daprvApi.Dapr{},
+		Chart:       r.c,
 	}
 
 	err := r.Get(ctx, req.NamespacedName, rr.Resource)

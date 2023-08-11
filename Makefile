@@ -10,6 +10,11 @@ MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 PROJECT_PATH := $(patsubst %/,%,$(dir $(MKFILE_PATH)))
 LOCALBIN ?= ${PROJECT_PATH}/bin
 
+HELM_CHART_REPO ?= https://dapr.github.io/helm-charts
+HELM_CHART ?= dapr
+HELM_CHART_VERSION ?= 1.11.0
+HELM_CHART_URL ?= https://raw.githubusercontent.com/dapr/helm-charts/master/dapr-$(HELM_CHART_VERSION).tgz
+
 ## Tool Versions
 CODEGEN_VERSION := v0.27.4
 KUSTOMIZE_VERSION ?= v5.0.1
@@ -59,6 +64,25 @@ all: build
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Dapr
+
+.PHONY: update/dapr
+update/dapr:
+	rm -rf $(PROJECT_PATH)/helm-charts/dapr
+	mkdir -p $(PROJECT_PATH)/helm-charts/dapr
+
+	curl --location --silent $(HELM_CHART_URL) \
+        | tar xzf - \
+            --directory $(PROJECT_PATH)/helm-charts/dapr \
+            --strip-components=1
+
+	rm -rf $(PROJECT_PATH)/config/crd/dapr
+	cp -r $(PROJECT_PATH)/helm-charts/dapr/crds  $(PROJECT_PATH)/config/crd/dapr
+
+	for f in $(ls $(PROJECT_PATH)/helm-charts/dapr/crds); do
+  		echo $(f)
+  	done
 
 ##@ Development
 

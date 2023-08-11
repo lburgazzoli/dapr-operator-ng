@@ -18,6 +18,9 @@ package dapr
 
 import (
 	"context"
+
+	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -29,7 +32,7 @@ import (
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
 )
 
-func NewReconciler(manager ctrl.Manager) (*Reconciler, error) {
+func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 	c, err := client.NewClient(manager.GetConfig(), manager.GetScheme(), manager.GetClient())
 	if err != nil {
 		return nil, err
@@ -49,7 +52,23 @@ func NewReconciler(manager ctrl.Manager) (*Reconciler, error) {
 		rec.ClusterType = controller.ClusterTypeOpenShift
 	}
 
+	rec.actions = append(rec.actions, NewInstallAction())
 	rec.actions = append(rec.actions, NewUpdateAction())
+
+	hc, err := loader.Load(o.ChartsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	rec.c = hc
+	if rec.c.Values == nil {
+		rec.c.Values = make(map[string]interface{})
+	}
+
+	rec.c.Values["dapr_operator.runAsNonRoot"] = "true"
+	rec.c.Values["dapr_placement.runAsNonRoot"] = "true"
+	rec.c.Values["dapr_sentry.runAsNonRoot"] = "true"
+	rec.c.Values["dapr_dashboard.runAsNonRoot"] = "true"
 
 	return &rec, nil
 }
@@ -63,8 +82,9 @@ type Reconciler struct {
 
 	Scheme      *runtime.Scheme
 	ClusterType controller.ClusterType
-	actions     []controller.Action[daprvApi.Dapr]
+	actions     []Action
 	l           logr.Logger
+	c           *chart.Chart
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {

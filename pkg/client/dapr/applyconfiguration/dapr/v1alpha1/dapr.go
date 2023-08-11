@@ -18,7 +18,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	v1 "k8s.io/client-go/applyconfigurations/meta/v1"
@@ -29,7 +28,7 @@ import (
 type DaprApplyConfiguration struct {
 	v1.TypeMetaApplyConfiguration    `json:",inline"`
 	*v1.ObjectMetaApplyConfiguration `json:"metadata,omitempty"`
-	Spec                             *v1alpha1.DaprSpec            `json:"spec,omitempty"`
+	Spec                             *DaprSpecApplyConfiguration   `json:"spec,omitempty"`
 	Status                           *DaprStatusApplyConfiguration `json:"status,omitempty"`
 }
 
@@ -205,8 +204,8 @@ func (b *DaprApplyConfiguration) ensureObjectMetaApplyConfigurationExists() {
 // WithSpec sets the Spec field in the declarative configuration to the given value
 // and returns the receiver, so that objects can be built by chaining "With" function invocations.
 // If called multiple times, the Spec field is set to the value of the last call.
-func (b *DaprApplyConfiguration) WithSpec(value v1alpha1.DaprSpec) *DaprApplyConfiguration {
-	b.Spec = &value
+func (b *DaprApplyConfiguration) WithSpec(value *DaprSpecApplyConfiguration) *DaprApplyConfiguration {
+	b.Spec = value
 	return b
 }
 

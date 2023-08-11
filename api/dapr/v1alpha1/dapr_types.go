@@ -21,7 +21,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// JSONSchemaURL represents a schema url.
+type JSONSchemaURL string
+
 type DaprSpec struct {
+	// +kubebuilder:validation:Optional
+	Values *JSON `json:"values"`
 }
 
 type DaprStatus struct {

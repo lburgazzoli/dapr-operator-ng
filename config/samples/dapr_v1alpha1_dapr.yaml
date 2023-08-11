@@ -9,4 +9,4 @@ metadata:
     app.kubernetes.io/created-by: dapr-operator-ng
   name: dapr-sample
 spec:
-  # TODO(user): Add fields here
+  values: {}

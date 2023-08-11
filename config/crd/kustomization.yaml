@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/dapr.dapr.io_daprs.yaml
+- dapr
 #+kubebuilder:scaffold:crdkustomizeresource
 
 configurations:

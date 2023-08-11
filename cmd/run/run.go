@@ -20,7 +20,7 @@ func init() {
 
 func NewRunCmd() *cobra.Command {
 
-	options := controller.Options{
+	controllerOpts := controller.Options{
 		MetricsAddr:                   ":8080",
 		ProbeAddr:                     ":8081",
 		PprofAddr:                     "",
@@ -30,12 +30,16 @@ func NewRunCmd() *cobra.Command {
 		LeaderElectionNamespace:       "",
 	}
 
+	helmOpts := daprCtl.HelmOptions{
+		ChartsDir: daprCtl.HelmChartsDir,
+	}
+
 	cmd := cobra.Command{
 		Use:   "run",
 		Short: "run",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return controller.Start(options, func(manager manager.Manager, opts controller.Options) error {
-				rec, err := daprCtl.NewReconciler(manager)
+			return controller.Start(controllerOpts, func(manager manager.Manager, opts controller.Options) error {
+				rec, err := daprCtl.NewReconciler(manager, helmOpts)
 				if err != nil {
 					return err
 				}
@@ -45,14 +49,17 @@ func NewRunCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&options.LeaderElectionID, "leader-election-id", options.LeaderElectionID, "The leader election ID of the operator.")
-	cmd.Flags().StringVar(&options.LeaderElectionNamespace, "leader-election-namespace", options.LeaderElectionNamespace, "The leader election namespace.")
-	cmd.Flags().BoolVar(&options.EnableLeaderElection, "leader-election", options.EnableLeaderElection, "Enable leader election for controller manager.")
-	cmd.Flags().BoolVar(&options.ReleaseLeaderElectionOnCancel, "leader-election-release", options.ReleaseLeaderElectionOnCancel, "If the leader should step down voluntarily.")
+	cmd.Flags().StringVar(&controllerOpts.LeaderElectionID, "leader-election-id", controllerOpts.LeaderElectionID, "The leader election ID of the operator.")
+	cmd.Flags().StringVar(&controllerOpts.LeaderElectionNamespace, "leader-election-namespace", controllerOpts.LeaderElectionNamespace, "The leader election namespace.")
+	cmd.Flags().BoolVar(&controllerOpts.EnableLeaderElection, "leader-election", controllerOpts.EnableLeaderElection, "Enable leader election for controller manager.")
+	cmd.Flags().BoolVar(&controllerOpts.ReleaseLeaderElectionOnCancel, "leader-election-release", controllerOpts.ReleaseLeaderElectionOnCancel, "If the leader should step down voluntarily.")
 
-	cmd.Flags().StringVar(&options.MetricsAddr, "metrics-bind-address", options.MetricsAddr, "The address the metric endpoint binds to.")
-	cmd.Flags().StringVar(&options.ProbeAddr, "health-probe-bind-address", options.ProbeAddr, "The address the probe endpoint binds to.")
-	cmd.Flags().StringVar(&options.PprofAddr, "pprof-bind-address", options.PprofAddr, "The address the pprof endpoint binds to.")
+	cmd.Flags().StringVar(&controllerOpts.MetricsAddr, "metrics-bind-address", controllerOpts.MetricsAddr, "The address the metric endpoint binds to.")
+	cmd.Flags().StringVar(&controllerOpts.ProbeAddr, "health-probe-bind-address", controllerOpts.ProbeAddr, "The address the probe endpoint binds to.")
+	cmd.Flags().StringVar(&controllerOpts.PprofAddr, "pprof-bind-address", controllerOpts.PprofAddr, "The address the pprof endpoint binds to.")
+
+	// TODO: support for remote repos
+	cmd.Flags().StringVar(&helmOpts.ChartsDir, "helm-charts-dir", helmOpts.ChartsDir, "Helm charts dir.")
 
 	return &cmd
 }
