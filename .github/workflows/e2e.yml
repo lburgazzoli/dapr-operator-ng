@@ -65,7 +65,7 @@ jobs:
           make deploy/e2e
           
           kubectl wait \
-            --namespace=sco-system \
+            --namespace=dapr-system \
             --for=condition=ready \
             pod \
             --selector=control-plane=dapr-controller \
