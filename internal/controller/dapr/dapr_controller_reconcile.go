@@ -116,7 +116,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	var allErrors error
 
 	for i := range r.actions {
-		if err := r.actions[i].Apply(ctx, &rr); err != nil {
+		if err := r.actions[i].Run(ctx, &rr); err != nil {
 			allErrors = multierr.Append(allErrors, err)
 		}
 	}

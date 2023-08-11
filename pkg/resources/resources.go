@@ -1,6 +1,7 @@
-package apply
+package resources
 
 import (
+	"fmt"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -50,4 +51,18 @@ func Labels(target *unstructured.Unstructured, labels map[string]string) {
 	}
 
 	target.SetLabels(m)
+}
+
+func Ref(obj *unstructured.Unstructured) string {
+	name := obj.GetName()
+	if obj.GetNamespace() == "" {
+		name = obj.GetNamespace() + ":" + obj.GetName()
+	}
+
+	return fmt.Sprintf(
+		"%s:%s:%s",
+		obj.GroupVersionKind().Kind,
+		obj.GroupVersionKind().GroupVersion().String(),
+		name,
+	)
 }

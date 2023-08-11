@@ -31,6 +31,6 @@ type ReconciliationRequest struct {
 
 type Action interface {
 	Configure(context.Context, *client.Client, *builder.Builder) (*builder.Builder, error)
-	Apply(context.Context, *ReconciliationRequest) error
+	Run(context.Context, *ReconciliationRequest) error
 	Cleanup(context.Context, *ReconciliationRequest) error
 }

@@ -2,6 +2,8 @@ package helm
 
 import (
 	"bytes"
+	"encoding/json"
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"io"
 	"sort"
 	"strings"
@@ -28,8 +30,13 @@ type Engine struct {
 	decoder runtime.Serializer
 }
 
-func (e *Engine) Render(c *chart.Chart, values chartutil.Values) ([]unstructured.Unstructured, error) {
-	files, err := engine.Engine{}.Render(c, values)
+func (e *Engine) Render(c *chart.Chart, dapr *daprApi.Dapr) ([]unstructured.Unstructured, error) {
+	rv, err := toRenderValues(c, dapr)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot render values")
+	}
+
+	files, err := engine.Engine{}.Render(c, rv)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot render a chart")
 	}
@@ -107,4 +114,30 @@ func (e *Engine) decode(content []byte) ([]unstructured.Unstructured, error) {
 	}
 
 	return results, nil
+}
+
+func toRenderValues(c *chart.Chart, dapr *daprApi.Dapr) (chartutil.Values, error) {
+	values := make(map[string]interface{})
+
+	if dapr.Spec.Values != nil {
+		if err := json.Unmarshal(dapr.Spec.Values.RawMessage, &values); err != nil {
+			return chartutil.Values{}, errors.Wrap(err, "unable to decode values")
+		}
+	}
+
+	if err := chartutil.ProcessDependencies(c, values); err != nil {
+		return chartutil.Values{}, errors.Wrap(err, "cannot process dependencies")
+	}
+
+	return chartutil.ToRenderValues(
+		c,
+		values,
+		chartutil.ReleaseOptions{
+			Name:      dapr.Name,
+			Namespace: dapr.Namespace,
+			Revision:  int(dapr.Generation),
+			IsInstall: false,
+			IsUpgrade: true,
+		},
+		nil)
 }

@@ -11,6 +11,9 @@ const (
 	KubernetesLabelAppComponent = "app.kubernetes.io/component"
 	KubernetesLabelAppPartOf    = "app.kubernetes.io/part-of"
 	KubernetesLabelAppManagedBy = "app.kubernetes.io/managed-by"
+
+	DaprResourceGeneration = "daprs.dapr.io/resource.generation"
+	DaprResourceRef        = "daprs.dapr.io/resource.ref"
 )
 
 type Options struct {

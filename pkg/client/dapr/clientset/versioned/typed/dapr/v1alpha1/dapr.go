@@ -201,7 +201,7 @@ func (c *daprs) Patch(ctx context.Context, name string, pt types.PatchType, data
 // Apply takes the given apply declarative configuration, applies it and returns the applied dapr.
 func (c *daprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Dapr, err error) {
 	if dapr == nil {
-		return nil, fmt.Errorf("dapr provided to Apply must not be nil")
+		return nil, fmt.Errorf("dapr provided to Run must not be nil")
 	}
 	patchOpts := opts.ToPatchOptions()
 	data, err := json.Marshal(dapr)
@@ -210,7 +210,7 @@ func (c *daprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfigura
 	}
 	name := dapr.Name
 	if name == nil {
-		return nil, fmt.Errorf("dapr.Name must be provided to Apply")
+		return nil, fmt.Errorf("dapr.Name must be provided to Run")
 	}
 	result = &v1alpha1.Dapr{}
 	err = c.client.Patch(types.ApplyPatchType).
@@ -228,7 +228,7 @@ func (c *daprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfigura
 // Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 func (c *daprs) ApplyStatus(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Dapr, err error) {
 	if dapr == nil {
-		return nil, fmt.Errorf("dapr provided to Apply must not be nil")
+		return nil, fmt.Errorf("dapr provided to Run must not be nil")
 	}
 	patchOpts := opts.ToPatchOptions()
 	data, err := json.Marshal(dapr)
@@ -238,7 +238,7 @@ func (c *daprs) ApplyStatus(ctx context.Context, dapr *daprv1alpha1.DaprApplyCon
 
 	name := dapr.Name
 	if name == nil {
-		return nil, fmt.Errorf("dapr.Name must be provided to Apply")
+		return nil, fmt.Errorf("dapr.Name must be provided to Run")
 	}
 
 	result = &v1alpha1.Dapr{}

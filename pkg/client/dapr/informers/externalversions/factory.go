@@ -103,7 +103,7 @@ func NewSharedInformerFactoryWithOptions(client versioned.Interface, defaultResy
 		customResync:     make(map[reflect.Type]time.Duration),
 	}
 
-	// Apply all options
+	// Run all options
 	for _, opt := range options {
 		factory = opt(factory)
 	}
