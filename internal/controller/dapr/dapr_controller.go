@@ -80,7 +80,8 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=*
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=*
 //+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=*
-//+kubebuilder:rbac:groups=,resources=secrets,verbs=*
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=*
+//+kubebuilder:rbac:groups="",resources=events,verbs=create
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=*
 //+kubebuilder:rbac:groups=dapr.io,resources=components,verbs=*

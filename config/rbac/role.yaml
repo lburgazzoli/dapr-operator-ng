@@ -4,7 +4,15 @@ kind: ClusterRole
 metadata:
   name: dapr-operator
 rules:
-- resources:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - '*'
