@@ -106,11 +106,12 @@ build: manifests generate fmt vet ## Build manager binary.
 	go build -ldflags="$(GOLDFLAGS)" -o bin/dapr-controller cmd/main.go
 
 .PHONY: run
-run: manifests generate fmt vet ## Run a controller from your host.
+run: ## Run a controller from your host.
 	go run -ldflags="$(GOLDFLAGS)" cmd/main.go run --leader-election=false --zap-devel
 
 .PHONY: run/local
-run/local: manifests generate fmt vet install run ## Install and Run a controller from your host.
+run/local: install ## Install and Run a controller from your host.
+	go run -ldflags="$(GOLDFLAGS)" cmd/main.go run --leader-election=false --zap-devel
 
 
 .PHONY: deps
