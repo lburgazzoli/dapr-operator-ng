@@ -56,9 +56,7 @@ func (e *Engine) Render(c *chart.Chart, values chartutil.Values) ([]unstructured
 			continue
 		}
 
-		for i := range ul {
-			result = append(result, ul[i])
-		}
+		result = append(result, ul...)
 	}
 
 	return result, nil
@@ -75,7 +73,7 @@ func (e *Engine) decode(content []byte) ([]unstructured.Unstructured, error) {
 
 		err := decoder.Decode(&out)
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 
