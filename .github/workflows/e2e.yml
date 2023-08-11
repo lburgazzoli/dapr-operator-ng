@@ -60,7 +60,7 @@ jobs:
             pod \
             --selector=app.kubernetes.io/component=controller \
             --timeout=90s
-      - name: "SetUp SCO Operator"
+      - name: "SetUp Dapr Operator"
         run: |          
           make deploy/e2e
           
