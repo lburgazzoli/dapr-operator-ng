@@ -19,11 +19,13 @@ HELM_CHART_URL ?= https://raw.githubusercontent.com/dapr/helm-charts/master/dapr
 CODEGEN_VERSION := v0.27.4
 KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.12.0
+KIND_VERSION ?= v0.20.0
+LINTER_VERSION ?= v1.52.2
 
 ## Tool Binaries
 KUBECTL ?= kubectl
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
-GL ?= $(LOCALBIN)/golangci-lint
+LINTER ?= $(LOCALBIN)/golangci-lint
 GOIMPORT ?= $(LOCALBIN)/goimports
 YQ ?= $(LOCALBIN)/yq
 
@@ -124,7 +126,7 @@ check: check/lint
 
 .PHONY: check/lint
 check/lint: golangci-lint
-	@$(GL) run \
+	@$(LINTER) run \
 		--config .golangci.yml \
 		--out-format tab \
 		--skip-dirs etc \
@@ -133,7 +135,7 @@ check/lint: golangci-lint
 
 .PHONY: check/lint/fix
 check/lint/fix: golangci-lint
-	@$(GL) run \
+	@$(LINTER) run \
 		--config .golangci.yml \
 		--out-format tab \
 		--skip-dirs etc \
@@ -147,6 +149,10 @@ docker/build: test ## Build docker image with the manager.
 .PHONY: docker/push
 docker/push: ## Push docker image with the manager.
 	$(CONTAINER_TOOL) push ${IMG}
+
+.PHONY: docker/push/kind
+docker/push/kind: docker/build ## Load docker image in kind.
+	kind load docker-image ${IMG}
 
 ##@ Deployment
 
@@ -209,10 +215,10 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 
 
 .PHONY: golangci-lint
-golangci-lint: $(GL)
-$(GL): $(LOCALBIN)
+golangci-lint: $(LINTER)
+$(LINTER): $(LOCALBIN)
 	@test -s $(LOCALBIN)/golangci-lint || \
-	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
+	GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@$(LINTER_VERSION)
 
 .PHONY: goimport
 goimport: $(GOIMPORT)
@@ -225,6 +231,14 @@ yq: $(YQ)
 $(YQ): $(LOCALBIN)
 	@test -s $(LOCALBIN)/yq || \
 	GOBIN=$(LOCALBIN) go install github.com/mikefarah/yq/v4@latest
+
+
+.PHONY: kind
+kind: $(KIND)
+$(KIND): $(LOCALBIN)
+	@test -s $(LOCALBIN)/kind || \
+	GOBIN=$(LOCALBIN) go install go install sigs.k8s.io/kind@$(KIND_VERSION)
+
 
 .PHONY: codegen-tools-install
 codegen-tools-install: $(LOCALBIN)
