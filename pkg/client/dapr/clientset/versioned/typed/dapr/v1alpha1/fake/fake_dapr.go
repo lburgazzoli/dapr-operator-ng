@@ -145,7 +145,7 @@ func (c *FakeDaprs) Patch(ctx context.Context, name string, pt types.PatchType, 
 // Apply takes the given apply declarative configuration, applies it and returns the applied dapr.
 func (c *FakeDaprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Dapr, err error) {
 	if dapr == nil {
-		return nil, fmt.Errorf("dapr provided to Run must not be nil")
+		return nil, fmt.Errorf("dapr provided to Apply must not be nil")
 	}
 	data, err := json.Marshal(dapr)
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *FakeDaprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfi
 	}
 	name := dapr.Name
 	if name == nil {
-		return nil, fmt.Errorf("dapr.Name must be provided to Run")
+		return nil, fmt.Errorf("dapr.Name must be provided to Apply")
 	}
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(daprsResource, c.ns, *name, types.ApplyPatchType, data), &v1alpha1.Dapr{})
@@ -168,7 +168,7 @@ func (c *FakeDaprs) Apply(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfi
 // Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
 func (c *FakeDaprs) ApplyStatus(ctx context.Context, dapr *daprv1alpha1.DaprApplyConfiguration, opts v1.ApplyOptions) (result *v1alpha1.Dapr, err error) {
 	if dapr == nil {
-		return nil, fmt.Errorf("dapr provided to Run must not be nil")
+		return nil, fmt.Errorf("dapr provided to Apply must not be nil")
 	}
 	data, err := json.Marshal(dapr)
 	if err != nil {
@@ -176,7 +176,7 @@ func (c *FakeDaprs) ApplyStatus(ctx context.Context, dapr *daprv1alpha1.DaprAppl
 	}
 	name := dapr.Name
 	if name == nil {
-		return nil, fmt.Errorf("dapr.Name must be provided to Run")
+		return nil, fmt.Errorf("dapr.Name must be provided to Apply")
 	}
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(daprsResource, c.ns, *name, types.ApplyPatchType, data, "status"), &v1alpha1.Dapr{})

@@ -45,6 +45,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Namespace: req.Namespace,
 		},
 		ClusterType: r.ClusterType,
+		Reconciler:  r,
 		Resource:    &daprvApi.Dapr{},
 		Chart:       r.c,
 	}

@@ -24,6 +24,7 @@ type ReconciliationRequest struct {
 	*client.Client
 	types.NamespacedName
 
+	Reconciler  *Reconciler
 	ClusterType controller.ClusterType
 	Resource    *daprApi.Dapr
 	Chart       *chart.Chart

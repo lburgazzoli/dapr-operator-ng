@@ -19,6 +19,9 @@ package dapr
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +33,8 @@ import (
 	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
+
+	ctrlRt "sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
 func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
@@ -43,6 +48,7 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 	rec.Client = c
 	rec.Scheme = manager.GetScheme()
 	rec.ClusterType = controller.ClusterTypeVanilla
+	rec.Manager = manager
 
 	isOpenshift, err := c.IsOpenShift()
 	if err != nil {
@@ -101,11 +107,13 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 type Reconciler struct {
 	*client.Client
 
+	Manager     ctrl.Manager
 	Scheme      *runtime.Scheme
 	ClusterType controller.ClusterType
 	actions     []Action
 	l           logr.Logger
 	c           *chart.Chart
+	controller  ctrlRt.Controller
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
@@ -125,5 +133,16 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 		c = b
 	}
 
-	return c.Complete(r)
+	ct, err := c.Build(r)
+	if err != nil {
+		return err
+	}
+
+	r.controller = ct
+
+	return nil
+}
+
+func (r *Reconciler) Watch(src source.Source, eh handler.EventHandler, predicates ...predicate.Predicate) error {
+	return r.controller.Watch(src, eh, predicates...)
 }

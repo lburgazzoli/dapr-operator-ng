@@ -21,14 +21,16 @@ import (
 
 func NewApplyAction() Action {
 	return &ApplyAction{
-		engine: helm.NewEngine(),
-		l:      ctrl.Log.WithName("action").WithName("apply"),
+		engine:        helm.NewEngine(),
+		l:             ctrl.Log.WithName("action").WithName("apply"),
+		subscriptions: make(map[string]struct{}),
 	}
 }
 
 type ApplyAction struct {
-	engine *helm.Engine
-	l      logr.Logger
+	engine        *helm.Engine
+	l             logr.Logger
+	subscriptions map[string]struct{}
 }
 
 func (a *ApplyAction) Configure(_ context.Context, _ *client.Client, b *builder.Builder) (*builder.Builder, error) {
@@ -62,6 +64,28 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		if _, ok := dc.(*client.NamespacedResource); ok {
 			obj.SetOwnerReferences(resources.OwnerReferences(rc.Resource))
 			obj.SetNamespace(rc.Resource.Namespace)
+
+			/*
+				r := resources.Ref(&obj)
+
+				if _, ok := a.subscriptions[r]; !ok {
+					err = rc.Reconciler.Watch(
+						source.Kind(rc.Reconciler.Manager.GetCache(), &obj),
+						handler.EnqueueRequestForOwner(
+							rc.Reconciler.Manager.GetScheme(),
+							rc.Reconciler.Manager.GetRESTMapper(),
+							&daprApi.Dapr{},
+							handler.OnlyControllerOwner()),
+						&predicates.DependentPredicate{},
+					)
+
+					if err != nil {
+						return err
+					}
+
+					a.subscriptions[r] = struct{}{}
+				}
+			*/
 		}
 
 		_, err = dc.Apply(ctx, obj.GetName(), &obj, metav1.ApplyOptions{
