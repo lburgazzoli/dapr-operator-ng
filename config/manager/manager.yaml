@@ -70,7 +70,7 @@ spec:
         - /dapr-controller
         args:
         - run
-        - --leader-elect
+        - --leader-election=true
         image: controller:latest
         name: dapr-controller
         securityContext:
@@ -99,5 +99,5 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      serviceAccountName: dapr-controller
+      serviceAccountName: dapr-controller-sa
       terminationGracePeriodSeconds: 10
