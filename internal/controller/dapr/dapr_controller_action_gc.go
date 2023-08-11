@@ -3,6 +3,11 @@ package dapr
 import (
 	"context"
 	"fmt"
+	"slices"
+	"strconv"
+	"sync"
+	"time"
+
 	"github.com/go-logr/logr"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
@@ -19,10 +24,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
-	"slices"
-	"strconv"
-	"sync"
-	"time"
 )
 
 func NewGCAction() Action {

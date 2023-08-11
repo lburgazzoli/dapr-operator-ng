@@ -3,10 +3,11 @@ package helm
 import (
 	"bytes"
 	"encoding/json"
-	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"io"
 	"sort"
 	"strings"
+
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

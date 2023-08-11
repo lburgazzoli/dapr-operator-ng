@@ -2,11 +2,12 @@ package dapr
 
 import (
 	"context"
+	"sort"
+	"strconv"
+
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/resources"
-	"sort"
-	"strconv"
 
 	"github.com/go-logr/logr"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
