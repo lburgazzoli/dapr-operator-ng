@@ -75,6 +75,26 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 //+kubebuilder:rbac:groups=dapr.dapr.io,resources=daprs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=dapr.dapr.io,resources=daprs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=dapr.dapr.io,resources=daprs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=*
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=*
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=*
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=*
+//+kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=*
+//+kubebuilder:rbac:groups=,resources=secrets,verbs=*
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=*
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=components,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=components/status,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=components/finalizers,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=configurations,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=configurations/status,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=configurations/finalizers,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=resiliencies,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=resiliencies/status,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=resiliencies/finalizers,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=subscriptions,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=subscriptions/status,verbs=*
+//+kubebuilder:rbac:groups=dapr.io,resources=subscriptions/finalizers,verbs=*
 
 type Reconciler struct {
 	*client.Client
