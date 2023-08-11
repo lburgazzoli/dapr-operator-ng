@@ -52,7 +52,6 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 		rec.ClusterType = controller.ClusterTypeOpenShift
 	}
 
-	rec.actions = append(rec.actions, NewInstallAction())
 	rec.actions = append(rec.actions, NewUpdateAction())
 
 	hc, err := loader.Load(o.ChartsDir)

@@ -1,7 +1,6 @@
 package client
 
 import (
-	route "github.com/openshift/client-go/route/clientset/versioned"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -26,7 +25,6 @@ type Client struct {
 	kubernetes.Interface
 
 	Discovery discovery.DiscoveryInterface
-	Route     route.Interface
 
 	dynamic *dynamic.DynamicClient
 	scheme  *runtime.Scheme
@@ -45,7 +43,7 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, cc ctrl.Client) (*Clien
 	if err != nil {
 		return nil, err
 	}
-	restClient, err := NewRESTClientForConfig(cfg)
+	restClient, err := newRESTClientForConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -65,24 +63,10 @@ func NewClient(cfg *rest.Config, scheme *runtime.Scheme, cc ctrl.Client) (*Clien
 		rest:      restClient,
 	}
 
-	io, err := IsOpenShift(discoveryClient)
-	if err != nil {
-		return nil, err
-	}
-
-	if io {
-		routeClient, err := route.NewForConfig(cfg)
-		if err != nil {
-			return nil, err
-		}
-
-		c.Route = routeClient
-	}
-
 	return &c, nil
 }
 
-func NewRESTClientForConfig(config *rest.Config) (*rest.RESTClient, error) {
+func newRESTClientForConfig(config *rest.Config) (*rest.RESTClient, error) {
 	cfg := rest.CopyConfig(config)
 	// so that the RESTClientFor doesn't complain
 	cfg.GroupVersion = &schema.GroupVersion{}
@@ -103,8 +87,8 @@ func (c *Client) IsOpenShift() (bool, error) {
 	return IsOpenShift(c.Discovery)
 }
 
-func (c *Client) Dynamic(gvk *schema.GroupVersionKind, obj *unstructured.Unstructured) (dynamic.ResourceInterface, error) {
-	mapping, err := c.mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+func (c *Client) Dynamic(namespace string, obj *unstructured.Unstructured) (dynamic.ResourceInterface, error) {
+	mapping, err := c.mapper.RESTMapping(obj.GroupVersionKind().GroupKind(), obj.GroupVersionKind().Version)
 	if err != nil {
 		return nil, err
 	}
@@ -112,9 +96,13 @@ func (c *Client) Dynamic(gvk *schema.GroupVersionKind, obj *unstructured.Unstruc
 	var dr dynamic.ResourceInterface
 
 	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
-		dr = c.dynamic.Resource(mapping.Resource).Namespace(obj.GetNamespace())
+		dr = &NamespacedResource{
+			ResourceInterface: c.dynamic.Resource(mapping.Resource).Namespace(namespace),
+		}
 	} else {
-		dr = c.dynamic.Resource(mapping.Resource)
+		dr = &ClusteredResource{
+			ResourceInterface: c.dynamic.Resource(mapping.Resource),
+		}
 	}
 
 	return dr, nil

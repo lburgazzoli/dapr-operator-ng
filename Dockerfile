@@ -28,6 +28,8 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -ldflags
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/dapr-controller .
+COPY helm-charts  /helm-charts
+
 USER 65532:65532
 
 ENTRYPOINT ["/dapr-controller"]

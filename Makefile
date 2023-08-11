@@ -68,21 +68,8 @@ help: ## Display this help.
 ##@ Dapr
 
 .PHONY: update/dapr
-update/dapr:
-	rm -rf $(PROJECT_PATH)/helm-charts/dapr
-	mkdir -p $(PROJECT_PATH)/helm-charts/dapr
-
-	curl --location --silent $(HELM_CHART_URL) \
-        | tar xzf - \
-            --directory $(PROJECT_PATH)/helm-charts/dapr \
-            --strip-components=1
-
-	rm -rf $(PROJECT_PATH)/config/crd/dapr
-	cp -r $(PROJECT_PATH)/helm-charts/dapr/crds  $(PROJECT_PATH)/config/crd/dapr
-
-	for f in $(ls $(PROJECT_PATH)/helm-charts/dapr/crds); do
-  		echo $(f)
-  	done
+update/dapr: ## Update the helm chart.
+	$(PROJECT_PATH)/hack/scripts/update_helm_chart.sh $(PROJECT_PATH) $(HELM_CHART_URL)
 
 ##@ Development
 

@@ -7,4 +7,5 @@ const (
 	RetryInterval    = 10 * time.Second
 	ConflictInterval = 1 * time.Second
 	FinalizerName    = "dapr.io/finalizer"
+	FieldManager     = "dapr-controller"
 )
