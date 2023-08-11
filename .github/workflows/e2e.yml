@@ -68,7 +68,7 @@ jobs:
             --namespace=sco-system \
             --for=condition=ready \
             pod \
-            --selector=control-plane=sco-operator \
+            --selector=control-plane=dapr-controller \
             --timeout=90s
       - name: "Run e2e"
         run: |
