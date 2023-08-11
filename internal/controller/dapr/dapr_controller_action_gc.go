@@ -119,24 +119,22 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 				"name", resource.GetName(),
 			)
 
-			/*
-				err := rc.Client.Delete(ctx, &resource, ctrlCli.PropagationPolicy(metav1.DeletePropagationForeground))
-				if err != nil {
-					// The resource may have already been deleted
-					if !k8serrors.IsNotFound(err) {
-						continue
-					}
-
-					return errors.Wrapf(
-						err,
-						"cannot delete resources gvk:%s, namespace: %s, name: %s",
-						resource.GroupVersionKind().String(),
-						resource.GetNamespace(),
-						resource.GetName())
-				} else {
-					a.l.Info("child resource deleted", "kind", resource.GetKind(), "name", resource.GetName())
+			err := rc.Client.Delete(ctx, &resource, ctrlCli.PropagationPolicy(metav1.DeletePropagationForeground))
+			if err != nil {
+				// The resource may have already been deleted
+				if !k8serrors.IsNotFound(err) {
+					continue
 				}
-			*/
+
+				return errors.Wrapf(
+					err,
+					"cannot delete resources gvk:%s, namespace: %s, name: %s",
+					resource.GroupVersionKind().String(),
+					resource.GetNamespace(),
+					resource.GetName())
+			}
+
+			a.l.Info("child resource deleted", "kind", resource.GetKind(), "name", resource.GetName())
 		}
 	}
 
