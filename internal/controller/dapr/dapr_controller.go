@@ -18,7 +18,6 @@ package dapr
 
 import (
 	"context"
-	"fmt"
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -175,11 +174,11 @@ func (r *Reconciler) EnqueueRequestsFromMapFunc(fn func(context.Context, ctrlCli
 	return handler.EnqueueRequestsFromMapFunc(fn)
 }
 
-func (r *Reconciler) Event(object runtime.Object, eventType string, reason string, message string, args ...interface{}) {
+func (r *Reconciler) Event(object runtime.Object, eventType string, reason string, message string) {
 	r.recorder.Event(
 		object,
 		eventType,
 		reason,
-		fmt.Sprintf(message, args...),
+		message,
 	)
 }

@@ -2,6 +2,8 @@ package dapr
 
 import (
 	"context"
+	"fmt"
+	corev1 "k8s.io/api/core/v1"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,6 +68,15 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		installOnly := a.installOnly(gvk)
 
 		if rc.Resource.Generation != rc.Resource.Status.ObservedGeneration {
+			rc.Reconciler.Event(
+				rc.Resource,
+				corev1.EventTypeNormal,
+				"RenderFullHelmTemplate",
+				fmt.Sprintf("Render full Helm template as Dapr spec changed (observedGeneration: %d, generation: %d)",
+					rc.Resource.Status.ObservedGeneration,
+					rc.Resource.Generation),
+			)
+
 			installOnly = false
 		}
 
