@@ -1,9 +1,10 @@
 package predicates
 
 import (
+	"reflect"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -15,7 +16,11 @@ type DependentPredicate struct {
 }
 
 func (DependentPredicate) Delete(e event.DeleteEvent) bool {
-	o := e.Object.(*unstructured.Unstructured)
+	o, ok := e.Object.(*unstructured.Unstructured)
+	if !ok {
+		log.Error(nil, "Unexpected object type", "gvk", e.Object.GetObjectKind().GroupVersionKind().String())
+		return false
+	}
 
 	log.Info("Reconciling due to dependent resource deletion",
 		"name", o.GetName(),
@@ -27,12 +32,24 @@ func (DependentPredicate) Delete(e event.DeleteEvent) bool {
 }
 
 func (DependentPredicate) Update(e event.UpdateEvent) bool {
-	oldObj := e.ObjectOld.(*unstructured.Unstructured).DeepCopy()
-	newObj := e.ObjectNew.(*unstructured.Unstructured).DeepCopy()
-
-	if oldObj.GetResourceVersion() == newObj.GetResourceVersion() {
+	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
 		return false
 	}
+
+	oldObj, ok := e.ObjectOld.(*unstructured.Unstructured)
+	if !ok {
+		log.Error(nil, "Unexpected old object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
+		return false
+	}
+
+	newObj, ok := e.ObjectNew.(*unstructured.Unstructured)
+	if !ok {
+		log.Error(nil, "Unexpected new object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
+		return false
+	}
+
+	oldObj = oldObj.DeepCopy()
+	newObj = newObj.DeepCopy()
 
 	// Update filters out events that change only the dependent resource
 	// status. It is not typical for the controller of a primary

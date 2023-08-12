@@ -2,13 +2,14 @@ package dapr
 
 import (
 	"context"
+	"sort"
+	"strconv"
+
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sort"
-	"strconv"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
