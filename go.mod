@@ -12,7 +12,7 @@ require (
 	github.com/rs/xid v1.5.0
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.4
-	go.uber.org/multierr v1.6.0
+	go.uber.org/multierr v1.11.0
 	golang.org/x/time v0.3.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.12.2
