@@ -49,7 +49,7 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	rec.Client = c
 	rec.Scheme = manager.GetScheme()
 	rec.ClusterType = controller.ClusterTypeVanilla
-	rec.Manager = manager
+	rec.manager = manager
 
 	isOpenshift, err := c.IsOpenShift()
 	if err != nil {
@@ -108,12 +108,12 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 type Reconciler struct {
 	*client.Client
 
-	Manager     ctrlRt.Manager
 	Scheme      *runtime.Scheme
 	ClusterType controller.ClusterType
 	actions     []Action
 	l           logr.Logger
 	c           *chart.Chart
+	manager     ctrlRt.Manager
 	controller  ctrl.Controller
 }
 
@@ -121,10 +121,10 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlRt.Manager) e
 	c := ctrlRt.NewControllerManagedBy(mgr)
 
 	// TODO: as today, the controller can handle multiple Dapr CR however, the Dapr operator does
-	//       not seems to be designed to handle multiple installations on the same cluster hence
+	//       not seem to be designed to handle multiple installations on the same cluster hence
 	//       we must discuss if we want to limit to a single CR or even remove the Dapr CR and
-	//       use a simple ConfigMap (which should be less practical as having a place - status -
-	//       where to report what's going on is highly considerable)
+	//       use a simple ConfigMap (which should be less practical as having a place like the
+	//       status field where to report what's going on is highly desirable.
 	c = c.For(&daprvApi.Dapr{}, builder.WithPredicates(
 		predicate.Or(
 			predicate.GenerationChangedPredicate{},
@@ -151,7 +151,16 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlRt.Manager) e
 
 func (r *Reconciler) Watch(obj ctrlCli.Object, eh handler.EventHandler, predicates ...predicate.Predicate) error {
 	return r.controller.Watch(
-		source.Kind(r.Manager.GetCache(), obj),
+		source.Kind(r.manager.GetCache(), obj),
 		eh,
 		predicates...)
+}
+
+func (r *Reconciler) EnqueueRequestForOwner(owner ctrlCli.Object, opts ...handler.OwnerOption) handler.EventHandler {
+	return handler.EnqueueRequestForOwner(
+		r.manager.GetScheme(),
+		r.manager.GetRESTMapper(),
+		owner,
+		opts...,
+	)
 }

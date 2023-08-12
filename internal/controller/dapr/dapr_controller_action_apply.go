@@ -5,8 +5,6 @@ import (
 	"sort"
 	"strconv"
 
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -19,7 +17,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/defaults"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/helm"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +56,6 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 	for i := range items {
 		obj := items[i]
 		gvk := obj.GroupVersionKind()
-		watchForUpdates := a.watchForUpdates(gvk)
 		installOnly := a.installOnly(gvk)
 
 		if rc.Resource.Generation != rc.Resource.Status.ObservedGeneration {
@@ -83,22 +79,15 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			r := gvk.GroupVersion().String() + ":" + gvk.Kind
 
 			if _, ok := a.subscriptions[r]; !ok {
-				var p predicate.Predicate
-
-				if watchForUpdates {
-					p = &predicates.DependentPredicate{}
-				} else {
-					p = &predicates.DeletedPredicate{}
-				}
-
 				err = rc.Reconciler.Watch(
 					&obj,
-					handler.EnqueueRequestForOwner(
-						rc.Reconciler.Manager.GetScheme(),
-						rc.Reconciler.Manager.GetRESTMapper(),
+					rc.Reconciler.EnqueueRequestForOwner(
 						&daprApi.Dapr{},
 						handler.OnlyControllerOwner()),
-					p,
+					&predicates.DependentPredicate{
+						WatchDelete: true,
+						WatchUpdate: a.watchForUpdates(gvk),
+					},
 				)
 
 				if err != nil {
@@ -131,7 +120,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		}
 
 		_, err = dc.Apply(ctx, obj.GetName(), &obj, metav1.ApplyOptions{
-			FieldManager: defaults.FieldManager,
+			FieldManager: controller.FieldManager,
 			Force:        true,
 		})
 

@@ -12,18 +12,25 @@ import (
 var _ predicate.Predicate = DependentPredicate{}
 
 type DependentPredicate struct {
+	WatchDelete bool
+	WatchUpdate bool
+
 	predicate.Funcs
 }
 
-func (DependentPredicate) Create(event.CreateEvent) bool {
+func (p DependentPredicate) Create(event.CreateEvent) bool {
 	return false
 }
 
-func (DependentPredicate) Generic(event.GenericEvent) bool {
+func (p DependentPredicate) Generic(event.GenericEvent) bool {
 	return false
 }
 
-func (DependentPredicate) Delete(e event.DeleteEvent) bool {
+func (p DependentPredicate) Delete(e event.DeleteEvent) bool {
+	if !p.WatchDelete {
+		return false
+	}
+
 	o, ok := e.Object.(*unstructured.Unstructured)
 	if !ok {
 		log.Error(nil, "Unexpected object type", "gvk", e.Object.GetObjectKind().GroupVersionKind().String())
@@ -39,7 +46,11 @@ func (DependentPredicate) Delete(e event.DeleteEvent) bool {
 	return true
 }
 
-func (DependentPredicate) Update(e event.UpdateEvent) bool {
+func (p DependentPredicate) Update(e event.UpdateEvent) bool {
+	if !p.WatchUpdate {
+		return false
+	}
+
 	if e.ObjectOld.GetResourceVersion() == e.ObjectNew.GetResourceVersion() {
 		return false
 	}

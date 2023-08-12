@@ -1,5 +1,7 @@
 package controller
 
+import "time"
+
 type ClusterType string
 
 const (
@@ -14,6 +16,12 @@ const (
 
 	DaprResourceGeneration = "daprs.dapr.io/resource.generation"
 	DaprResourceRef        = "daprs.dapr.io/resource.ref"
+
+	SyncInterval     = 5 * time.Second
+	RetryInterval    = 10 * time.Second
+	ConflictInterval = 1 * time.Second
+	FinalizerName    = "dapr.io/finalizer"
+	FieldManager     = "dapr-controller"
 )
 
 type Options struct {

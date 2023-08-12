@@ -20,15 +20,17 @@ import (
 	"context"
 	"sort"
 
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
+
 	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/defaults"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,7 +66,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Add finalizer
 		//
 
-		if controllerutil.AddFinalizer(rr.Resource, defaults.FinalizerName) {
+		if ctrlutil.AddFinalizer(rr.Resource, controller.FinalizerName) {
 			if err := r.Update(ctx, rr.Resource); err != nil {
 				if k8serrors.IsConflict(err) {
 					return ctrl.Result{}, err
@@ -89,7 +91,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Handle finalizer
 		//
 
-		if controllerutil.RemoveFinalizer(rr.Resource, defaults.FinalizerName) {
+		if ctrlutil.RemoveFinalizer(rr.Resource, controller.FinalizerName) {
 			if err := r.Update(ctx, rr.Resource); err != nil {
 				if k8serrors.IsConflict(err) {
 					return ctrl.Result{}, err
