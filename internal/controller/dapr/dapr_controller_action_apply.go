@@ -2,6 +2,11 @@ package dapr
 
 import (
 	"context"
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sort"
 	"strconv"
 
@@ -50,6 +55,13 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 	for i := range items {
 		obj := items[i]
+		gvk := obj.GroupVersionKind()
+		mustWatch := a.mustWatch(gvk)
+		installOnly := a.installOnly(gvk)
+
+		if rc.Resource.Generation != rc.Resource.Status.ObservedGeneration {
+			installOnly = false
+		}
 
 		dc, err := rc.Client.Dynamic(rc.Resource.Namespace, &obj)
 		if err != nil {
@@ -65,12 +77,12 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			obj.SetOwnerReferences(resources.OwnerReferences(rc.Resource))
 			obj.SetNamespace(rc.Resource.Namespace)
 
-			/*
-				r := resources.Ref(&obj)
+			if mustWatch {
+				r := gvk.GroupVersion().String() + ":" + gvk.Kind
 
 				if _, ok := a.subscriptions[r]; !ok {
 					err = rc.Reconciler.Watch(
-						source.Kind(rc.Reconciler.Manager.GetCache(), &obj),
+						&obj,
 						handler.EnqueueRequestForOwner(
 							rc.Reconciler.Manager.GetScheme(),
 							rc.Reconciler.Manager.GetRESTMapper(),
@@ -85,11 +97,33 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 					a.subscriptions[r] = struct{}{}
 				}
-			*/
+			}
+		}
+
+		if installOnly {
+			old, err := dc.Get(ctx, obj.GetName(), metav1.GetOptions{})
+			if err != nil {
+				if !k8serrors.IsNotFound(err) {
+					return errors.Wrapf(err, "cannot get object %s", resources.Ref(&obj))
+				}
+			}
+
+			if old != nil {
+				// Every time the template is rendered, the helm function genSignedCert kicks in and
+				// re-generated certs which causes a number os side effects, like deployments restart
+				// etc.
+				//
+				// As consequence some resources are not meant to be watched and re-created unless the
+				// Dapr CR is updated.
+				a.l.Info("skip apply as resource marked for installation only", "ref", resources.Ref(&obj))
+
+				return nil
+			}
 		}
 
 		_, err = dc.Apply(ctx, obj.GetName(), &obj, metav1.ApplyOptions{
 			FieldManager: defaults.FieldManager,
+			Force:        true,
 		})
 
 		if err != nil {
@@ -131,4 +165,20 @@ func (a *ApplyAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) er
 	}
 
 	return nil
+}
+
+func (a *ApplyAction) mustWatch(gvk schema.GroupVersionKind) bool {
+	if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
+		return false
+	}
+
+	return true
+}
+
+func (a *ApplyAction) installOnly(gvk schema.GroupVersionKind) bool {
+	if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
+		return true
+	}
+
+	return false
 }

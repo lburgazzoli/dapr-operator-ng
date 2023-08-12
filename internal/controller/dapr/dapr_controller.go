@@ -25,7 +25,6 @@ import (
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -34,17 +33,19 @@ import (
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
 
-	ctrlRt "sigs.k8s.io/controller-runtime/pkg/controller"
+	ctrlRt "sigs.k8s.io/controller-runtime"
+	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
+func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	c, err := client.NewClient(manager.GetConfig(), manager.GetScheme(), manager.GetClient())
 	if err != nil {
 		return nil, err
 	}
 
 	rec := Reconciler{}
-	rec.l = ctrl.Log.WithName("controller")
+	rec.l = ctrlRt.Log.WithName("controller")
 	rec.Client = c
 	rec.Scheme = manager.GetScheme()
 	rec.ClusterType = controller.ClusterTypeVanilla
@@ -107,18 +108,23 @@ func NewReconciler(manager ctrl.Manager, o HelmOptions) (*Reconciler, error) {
 type Reconciler struct {
 	*client.Client
 
-	Manager     ctrl.Manager
+	Manager     ctrlRt.Manager
 	Scheme      *runtime.Scheme
 	ClusterType controller.ClusterType
 	actions     []Action
 	l           logr.Logger
 	c           *chart.Chart
-	controller  ctrlRt.Controller
+	controller  ctrl.Controller
 }
 
-func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	c := ctrl.NewControllerManagedBy(mgr)
+func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlRt.Manager) error {
+	c := ctrlRt.NewControllerManagedBy(mgr)
 
+	// TODO: as today, the controller can handle multiple Dapr CR however, the Dapr operator does
+	//       not seems to be designed to handle multiple installations on the same cluster hence
+	//       we must discuss if we want to limit to a single CR or even remove the Dapr CR and
+	//       use a simple ConfigMap (which should be less practical as having a place - status -
+	//       where to report what's going on is highly considerable)
 	c = c.For(&daprvApi.Dapr{}, builder.WithPredicates(
 		predicate.Or(
 			predicate.GenerationChangedPredicate{},
@@ -143,6 +149,9 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 	return nil
 }
 
-func (r *Reconciler) Watch(src source.Source, eh handler.EventHandler, predicates ...predicate.Predicate) error {
-	return r.controller.Watch(src, eh, predicates...)
+func (r *Reconciler) Watch(obj ctrlCli.Object, eh handler.EventHandler, predicates ...predicate.Predicate) error {
+	return r.controller.Watch(
+		source.Kind(r.Manager.GetCache(), obj),
+		eh,
+		predicates...)
 }
