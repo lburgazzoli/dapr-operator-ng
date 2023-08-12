@@ -1,7 +1,10 @@
 package predicates
 
 import (
+	"encoding/json"
 	"reflect"
+
+	"github.com/wI2L/jsondiff"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,7 +36,7 @@ func (p DependentPredicate) Delete(e event.DeleteEvent) bool {
 
 	o, ok := e.Object.(*unstructured.Unstructured)
 	if !ok {
-		log.Error(nil, "Unexpected object type", "gvk", e.Object.GetObjectKind().GroupVersionKind().String())
+		log.Error(nil, "unexpected object type", "gvk", e.Object.GetObjectKind().GroupVersionKind().String())
 		return false
 	}
 
@@ -57,13 +60,13 @@ func (p DependentPredicate) Update(e event.UpdateEvent) bool {
 
 	oldObj, ok := e.ObjectOld.(*unstructured.Unstructured)
 	if !ok {
-		log.Error(nil, "Unexpected old object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
+		log.Error(nil, "unexpected old object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
 		return false
 	}
 
 	newObj, ok := e.ObjectNew.(*unstructured.Unstructured)
 	if !ok {
-		log.Error(nil, "Unexpected new object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
+		log.Error(nil, "unexpected new object type", "gvk", e.ObjectOld.GetObjectKind().GroupVersionKind().String())
 		return false
 	}
 
@@ -86,11 +89,23 @@ func (p DependentPredicate) Update(e event.UpdateEvent) bool {
 		return false
 	}
 
+	patch, err := jsondiff.Compare(oldObj, newObj)
+	if err != nil {
+		log.Error(err, "failed to generate diff")
+		return true
+	}
+	d, err := json.Marshal(patch)
+	if err != nil {
+		log.Error(err, "failed to generate diff")
+		return true
+	}
+
 	log.Info("Reconciling due to dependent resource update",
 		"name", newObj.GetName(),
 		"namespace", newObj.GetNamespace(),
 		"apiVersion", newObj.GroupVersionKind().GroupVersion(),
-		"kind", newObj.GroupVersionKind().Kind)
+		"kind", newObj.GroupVersionKind().Kind,
+		"diff", string(d))
 
 	return true
 }

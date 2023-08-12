@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/resources"
+
 	"github.com/go-logr/logr"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
@@ -55,7 +57,7 @@ func (a *GCAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) error
 }
 
 func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
-	a.l.Info("Perform gc")
+	a.l.Info("run")
 
 	deletableGVKs, err := a.getDeletableTypes(ctx, rc)
 	if err != nil {
@@ -113,11 +115,7 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 				continue
 			}
 
-			a.l.Info("deleting leftover",
-				"gvk", resource.GroupVersionKind().String(),
-				"namespace", resource.GetNamespace(),
-				"name", resource.GetName(),
-			)
+			a.l.Info("deleting", "ref", resources.Ref(&resource))
 
 			err := rc.Client.Delete(ctx, &resource, ctrlCli.PropagationPolicy(metav1.DeletePropagationForeground))
 			if err != nil {
@@ -134,7 +132,7 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 					resource.GetName())
 			}
 
-			a.l.Info("child resource deleted", "kind", resource.GetKind(), "name", resource.GetName())
+			a.l.Info("deleted", "ref", resources.Ref(&resource))
 		}
 	}
 

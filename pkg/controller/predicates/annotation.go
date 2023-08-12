@@ -12,8 +12,20 @@ type AnnotationChanged struct {
 	Name string
 }
 
+func (p AnnotationChanged) Create(event.CreateEvent) bool {
+	return false
+}
+
+func (p AnnotationChanged) Generic(event.GenericEvent) bool {
+	return false
+}
+
+func (p AnnotationChanged) Delete(event.DeleteEvent) bool {
+	return false
+}
+
 // Update implements default UpdateEvent filter for validating annotation change.
-func (in AnnotationChanged) Update(e event.UpdateEvent) bool {
+func (p AnnotationChanged) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old object to update", "event", e)
 		return false
@@ -36,5 +48,5 @@ func (in AnnotationChanged) Update(e event.UpdateEvent) bool {
 	oldAnnotations := e.ObjectOld.GetAnnotations()
 	newAnnotations := e.ObjectNew.GetAnnotations()
 
-	return oldAnnotations[in.Name] != newAnnotations[in.Name]
+	return oldAnnotations[p.Name] != newAnnotations[p.Name]
 }

@@ -4,6 +4,11 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/types"
+	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
@@ -22,6 +27,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
+
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func NewApplyAction() Action {
@@ -72,7 +79,11 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			controller.DaprResourceRef:        rc.Resource.Namespace + "-" + rc.Resource.Name,
 		})
 
-		if _, ok := dc.(*client.NamespacedResource); ok {
+		switch dc.(type) {
+		// NamespacedResource: in this case, filtering with ownership can be implemented
+		// as all the namespaced resources created by this controller have the Dapr CR as
+		// an owner
+		case *client.NamespacedResource:
 			obj.SetOwnerReferences(resources.OwnerReferences(rc.Resource))
 			obj.SetNamespace(rc.Resource.Namespace)
 
@@ -84,10 +95,66 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 					rc.Reconciler.EnqueueRequestForOwner(
 						&daprApi.Dapr{},
 						handler.OnlyControllerOwner()),
-					&predicates.DependentPredicate{
-						WatchDelete: true,
-						WatchUpdate: a.watchForUpdates(gvk),
-					},
+					predicate.And(
+						&predicates.HasLabel{
+							Name: controller.DaprResourceRef,
+						},
+						&predicates.DependentPredicate{
+							WatchDelete: true,
+							WatchUpdate: a.watchForUpdates(gvk),
+						},
+					),
+				)
+
+				if err != nil {
+					return err
+				}
+
+				a.subscriptions[r] = struct{}{}
+			}
+		// ClusteredResource: in this case, ownership based filtering is not supported
+		// as you cannot have a non namespaced owner. For such reason, the resource for
+		// which a reconcile should be triggered can be identified by using a label
+		//
+		//    daprs.dapr.io/resource.ref = ${namespace}-${name}
+		//
+		case *client.ClusteredResource:
+			r := gvk.GroupVersion().String() + ":" + gvk.Kind
+
+			if _, ok := a.subscriptions[r]; !ok {
+				err = rc.Reconciler.Watch(
+					&obj,
+					rc.Reconciler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlCli.Object) []reconcile.Request {
+						labels := object.GetLabels()
+						if labels == nil {
+							return nil
+						}
+						ref := labels[controller.DaprResourceRef]
+						if ref == "" {
+							return nil
+						}
+
+						parts := strings.SplitN(ref, "-", 2)
+						if len(parts) != 2 {
+							return nil
+						}
+
+						return []reconcile.Request{{
+							NamespacedName: types.NamespacedName{
+								Name:      parts[1],
+								Namespace: parts[0],
+							},
+						}}
+					}),
+					predicate.And(
+						&predicates.HasLabel{
+							Name: controller.DaprResourceRef,
+						},
+						&predicates.DependentPredicate{
+							WatchDelete: true,
+							WatchUpdate: a.watchForUpdates(gvk),
+						},
+					),
 				)
 
 				if err != nil {
@@ -113,7 +180,10 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 				//
 				// As consequence some resources are not meant to be watched and re-created unless the
 				// Dapr CR is updated.
-				a.l.Info("skip apply as resource marked for installation only", "ref", resources.Ref(&obj))
+				a.l.Info("run",
+					"apply", "false",
+					"ref", resources.Ref(&obj),
+					"reason", "resource marked as install-only")
 
 				continue
 			}
@@ -128,7 +198,9 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			return errors.Wrapf(err, "cannot patch object %s", resources.Ref(&obj))
 		}
 
-		a.l.Info("apply", "ref", resources.Ref(&obj))
+		a.l.Info("run",
+			"apply", "true",
+			"ref", resources.Ref(&obj))
 	}
 
 	return nil
@@ -169,12 +241,18 @@ func (a *ApplyAction) watchForUpdates(gvk schema.GroupVersionKind) bool {
 	if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
 		return false
 	}
+	if gvk.Group == "admissionregistration.k8s.io" && gvk.Version == "v1" && gvk.Kind == "MutatingWebhookConfiguration" {
+		return false
+	}
 
 	return true
 }
 
 func (a *ApplyAction) installOnly(gvk schema.GroupVersionKind) bool {
 	if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
+		return true
+	}
+	if gvk.Group == "admissionregistration.k8s.io" && gvk.Version == "v1" && gvk.Kind == "MutatingWebhookConfiguration" {
 		return true
 	}
 

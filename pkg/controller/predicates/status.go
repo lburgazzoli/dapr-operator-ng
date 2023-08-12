@@ -15,8 +15,20 @@ type StatusChanged struct {
 	predicate.Funcs
 }
 
+func (p StatusChanged) Create(event.CreateEvent) bool {
+	return false
+}
+
+func (p StatusChanged) Generic(event.GenericEvent) bool {
+	return false
+}
+
+func (p StatusChanged) Delete(event.DeleteEvent) bool {
+	return false
+}
+
 // Update implements default UpdateEvent filter for validating status change.
-func (in StatusChanged) Update(e event.UpdateEvent) bool {
+func (p StatusChanged) Update(e event.UpdateEvent) bool {
 	if e.ObjectOld == nil {
 		log.Error(nil, "Update event has no old object to update", "event", e)
 		return false

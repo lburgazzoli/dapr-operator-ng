@@ -19,6 +19,8 @@ package dapr
 import (
 	"context"
 
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -163,4 +165,8 @@ func (r *Reconciler) EnqueueRequestForOwner(owner ctrlCli.Object, opts ...handle
 		owner,
 		opts...,
 	)
+}
+
+func (r *Reconciler) EnqueueRequestsFromMapFunc(fn func(context.Context, ctrlCli.Object) []reconcile.Request) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(fn)
 }
