@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,7 +59,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 	for i := range items {
 		obj := items[i]
 		gvk := obj.GroupVersionKind()
-		mustWatch := a.mustWatch(gvk)
+		watchForUpdates := a.watchForUpdates(gvk)
 		installOnly := a.installOnly(gvk)
 
 		if rc.Resource.Generation != rc.Resource.Status.ObservedGeneration {
@@ -78,26 +80,32 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			obj.SetOwnerReferences(resources.OwnerReferences(rc.Resource))
 			obj.SetNamespace(rc.Resource.Namespace)
 
-			if mustWatch {
-				r := gvk.GroupVersion().String() + ":" + gvk.Kind
+			r := gvk.GroupVersion().String() + ":" + gvk.Kind
 
-				if _, ok := a.subscriptions[r]; !ok {
-					err = rc.Reconciler.Watch(
-						&obj,
-						handler.EnqueueRequestForOwner(
-							rc.Reconciler.Manager.GetScheme(),
-							rc.Reconciler.Manager.GetRESTMapper(),
-							&daprApi.Dapr{},
-							handler.OnlyControllerOwner()),
-						&predicates.DependentPredicate{},
-					)
+			if _, ok := a.subscriptions[r]; !ok {
+				var p predicate.Predicate
 
-					if err != nil {
-						return err
-					}
-
-					a.subscriptions[r] = struct{}{}
+				if watchForUpdates {
+					p = &predicates.DependentPredicate{}
+				} else {
+					p = &predicates.DeletedPredicate{}
 				}
+
+				err = rc.Reconciler.Watch(
+					&obj,
+					handler.EnqueueRequestForOwner(
+						rc.Reconciler.Manager.GetScheme(),
+						rc.Reconciler.Manager.GetRESTMapper(),
+						&daprApi.Dapr{},
+						handler.OnlyControllerOwner()),
+					p,
+				)
+
+				if err != nil {
+					return err
+				}
+
+				a.subscriptions[r] = struct{}{}
 			}
 		}
 
@@ -118,7 +126,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 				// Dapr CR is updated.
 				a.l.Info("skip apply as resource marked for installation only", "ref", resources.Ref(&obj))
 
-				return nil
+				continue
 			}
 		}
 
@@ -168,7 +176,7 @@ func (a *ApplyAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) er
 	return nil
 }
 
-func (a *ApplyAction) mustWatch(gvk schema.GroupVersionKind) bool {
+func (a *ApplyAction) watchForUpdates(gvk schema.GroupVersionKind) bool {
 	if gvk.Group == "" && gvk.Version == "v1" && gvk.Kind == "Secret" {
 		return false
 	}

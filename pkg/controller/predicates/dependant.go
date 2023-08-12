@@ -15,6 +15,14 @@ type DependentPredicate struct {
 	predicate.Funcs
 }
 
+func (DependentPredicate) Create(event.CreateEvent) bool {
+	return false
+}
+
+func (DependentPredicate) Generic(event.GenericEvent) bool {
+	return false
+}
+
 func (DependentPredicate) Delete(e event.DeleteEvent) bool {
 	o, ok := e.Object.(*unstructured.Unstructured)
 	if !ok {
