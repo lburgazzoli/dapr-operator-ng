@@ -5,9 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
-
-	route "github.com/openshift/client-go/route/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
@@ -23,7 +20,6 @@ type Client struct {
 
 	Dapr      daprClient.Interface
 	Discovery discovery.DiscoveryInterface
-	Route     route.Interface
 
 	//nolint:unused
 	scheme *runtime.Scheme
@@ -66,20 +62,6 @@ func newClient() (*Client, error) {
 		Discovery: discoveryClient,
 		Dapr:      dClient,
 		config:    cfg,
-	}
-
-	io, err := client.IsOpenShift(discoveryClient)
-	if err != nil {
-		return nil, err
-	}
-
-	if io {
-		routeClient, err := route.NewForConfig(cfg)
-		if err != nil {
-			return nil, err
-		}
-
-		c.Route = routeClient
 	}
 
 	return &c, nil
