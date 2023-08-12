@@ -18,6 +18,8 @@ package dapr
 
 import (
 	"context"
+	"fmt"
+	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -52,6 +54,7 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	rec.Scheme = manager.GetScheme()
 	rec.ClusterType = controller.ClusterTypeVanilla
 	rec.manager = manager
+	rec.recorder = manager.GetEventRecorderFor(controller.FieldManager)
 
 	isOpenshift, err := c.IsOpenShift()
 	if err != nil {
@@ -117,6 +120,7 @@ type Reconciler struct {
 	c           *chart.Chart
 	manager     ctrlRt.Manager
 	controller  ctrl.Controller
+	recorder    record.EventRecorder
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlRt.Manager) error {
@@ -169,4 +173,13 @@ func (r *Reconciler) EnqueueRequestForOwner(owner ctrlCli.Object, opts ...handle
 
 func (r *Reconciler) EnqueueRequestsFromMapFunc(fn func(context.Context, ctrlCli.Object) []reconcile.Request) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(fn)
+}
+
+func (r *Reconciler) Event(object runtime.Object, eventType string, reason string, message string, args ...interface{}) {
+	r.recorder.Event(
+		object,
+		eventType,
+		reason,
+		fmt.Sprintf(message, args...),
+	)
 }
