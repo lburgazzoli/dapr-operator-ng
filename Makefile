@@ -18,7 +18,7 @@ HELM_CHART_URL ?= https://raw.githubusercontent.com/dapr/helm-charts/master/dapr
 ## Tool Versions
 CODEGEN_VERSION := v0.27.4
 KUSTOMIZE_VERSION ?= v5.0.1
-CONTROLLER_TOOLS_VERSION ?= v0.12.0
+CONTROLLER_TOOLS_VERSION ?= v0.12.1
 KIND_VERSION ?= v0.20.0
 LINTER_VERSION ?= v1.52.2
 

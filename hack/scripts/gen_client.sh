@@ -19,7 +19,6 @@ mkdir -p "${PROJECT_ROOT}/pkg/client/dapr"
 "${PROJECT_ROOT}"/bin/client-gen \
   --go-header-file="${PROJECT_ROOT}/hack/boilerplate.go.txt" \
   --output-base="${TMP_DIR}/client" \
-  --input-dirs=github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1 \
   --input-base=github.com/lburgazzoli/dapr-operator-ng/api \
   --input=dapr/v1alpha1 \
   --fake-clientset=false \
@@ -41,5 +40,6 @@ mkdir -p "${PROJECT_ROOT}/pkg/client/dapr"
   --listers-package=github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/listers \
   --output-package=github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/informers
 
-
-cp -R "${TMP_DIR}"/client/github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/* "${PROJECT_ROOT}"/pkg/client/dapr
+cp -r \
+  "${TMP_DIR}"/client/github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/* \
+  "${PROJECT_ROOT}"/pkg/client/dapr

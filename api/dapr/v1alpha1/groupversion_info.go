@@ -20,13 +20,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	dapr "github.com/lburgazzoli/dapr-operator-ng/api/dapr"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
 	// GroupVersion is group version used to register these objects.
-	GroupVersion = schema.GroupVersion{Group: "dapr.dapr.io", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: dapr.Group, Version: "v1alpha1"}
 
 	// SchemeGroupVersion is an hack for client gen.
 	SchemeGroupVersion = GroupVersion

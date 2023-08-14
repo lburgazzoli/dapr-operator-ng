@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// +kubebuilder:object:generate=true
+// +groupName=dapr.dapr.io
 package v1alpha1
 
 import (
