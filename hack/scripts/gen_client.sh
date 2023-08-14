@@ -19,9 +19,11 @@ mkdir -p "${PROJECT_ROOT}/pkg/client/dapr"
 "${PROJECT_ROOT}"/bin/client-gen \
   --go-header-file="${PROJECT_ROOT}/hack/boilerplate.go.txt" \
   --output-base="${TMP_DIR}/client" \
-  --input=dapr/v1alpha1 \
-  --clientset-name "versioned"  \
+  --input-dirs=github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1 \
   --input-base=github.com/lburgazzoli/dapr-operator-ng/api \
+  --input=dapr/v1alpha1 \
+  --fake-clientset=false \
+  --clientset-name "versioned"  \
   --apply-configuration-package=github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/applyconfiguration \
   --output-package=github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/clientset
 

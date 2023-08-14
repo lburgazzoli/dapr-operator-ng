@@ -38,6 +38,7 @@ type DaprStatus struct {
 // +genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`,description="The phase"
 // +kubebuilder:resource:path=daprs,scope=Namespaced,shortName=kd,categories=integration;camel
 
