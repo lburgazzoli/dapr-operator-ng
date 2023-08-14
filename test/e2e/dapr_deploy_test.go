@@ -10,6 +10,7 @@ import (
 
 	. "github.com/lburgazzoli/dapr-operator-ng/test/support"
 
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/tools/applyconfiguration/tools/v1alpha1"
 )
 
@@ -27,7 +28,7 @@ func TestDaprDeploy(t *testing.T) {
 			// sets the wrong APIVersion (tools/v1alpha1)
 			//
 			// TODO: figure out why
-			WithAPIVersion("tools.dapr.io/v1alpha1").
+			WithAPIVersion(daprApi.GroupVersion.String()).
 			WithSpec(daprAc.DaprSpec().
 				WithValues(nil),
 			),
