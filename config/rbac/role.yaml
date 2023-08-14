@@ -35,32 +35,6 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - dapr.dapr.io
-  resources:
-  - daprs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - dapr.dapr.io
-  resources:
-  - daprs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - dapr.dapr.io
-  resources:
-  - daprs/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
   - dapr.io
   resources:
   - components
@@ -156,3 +130,29 @@ rules:
   - roles
   verbs:
   - '*'
+- apiGroups:
+  - tools.dapr.io
+  resources:
+  - daprs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - tools.dapr.io
+  resources:
+  - daprs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - tools.dapr.io
+  resources:
+  - daprs/status
+  verbs:
+  - get
+  - patch
+  - update

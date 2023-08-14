@@ -5,14 +5,14 @@ import (
 	"os"
 	"path/filepath"
 
-	daprClient "github.com/lburgazzoli/dapr-operator-ng/pkg/client/dapr/clientset/versioned"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	daprClient "github.com/lburgazzoli/dapr-operator-ng/pkg/client/tools/clientset/versioned"
 )
 
 type Client struct {
@@ -52,6 +52,7 @@ func newClient() (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	dClient, err := daprClient.NewForConfig(cfg)
 	if err != nil {
 		return nil, err

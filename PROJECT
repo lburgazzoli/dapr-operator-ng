@@ -14,8 +14,8 @@ resources:
     namespaced: true
   controller: true
   domain: dapr.io
-  group: dapr
+  group: tools
   kind: Dapr
-  path: github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1
+  path: github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1
   version: v1alpha1
 version: "3"

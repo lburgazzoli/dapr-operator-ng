@@ -1,4 +1,4 @@
 ## Append samples of your project ##
 resources:
-- dapr_v1alpha1_dapr.yaml
+- sample.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

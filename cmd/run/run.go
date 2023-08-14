@@ -6,8 +6,8 @@ import (
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 
-	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
-	daprCtl "github.com/lburgazzoli/dapr-operator-ng/internal/controller/dapr"
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
+	daprCtl "github.com/lburgazzoli/dapr-operator-ng/internal/controller/tools"
 	routev1 "github.com/openshift/api/route/v1"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"

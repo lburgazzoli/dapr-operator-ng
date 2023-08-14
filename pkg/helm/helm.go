@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/dapr/v1alpha1"
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"

@@ -1,0 +1,12 @@
+apiVersion: tools.dapr.io/v1alpha1
+kind: Dapr
+metadata:
+  labels:
+    app.kubernetes.io/name: dapr
+    app.kubernetes.io/instance: dapr-sample
+    app.kubernetes.io/part-of: dapr-operator-ng
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: dapr-operator-ng
+  name: dapr-sample
+spec:
+  values: {}
