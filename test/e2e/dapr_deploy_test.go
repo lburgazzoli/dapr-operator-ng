@@ -27,7 +27,7 @@ func TestDaprDeploy(t *testing.T) {
 			// sets the wrong APIVersion (tools/v1alpha1)
 			//
 			// TODO: figure out why
-			WithAPIVersion("dapr.tools.io/v1alpha1").
+			WithAPIVersion("tools.dapr.io/v1alpha1").
 			WithSpec(daprAc.DaprSpec().
 				WithValues(nil),
 			),
