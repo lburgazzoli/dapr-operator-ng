@@ -13,7 +13,6 @@ import (
 	. "github.com/lburgazzoli/dapr-operator-ng/test/support"
 	. "github.com/onsi/gomega"
 
-	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/tools/applyconfiguration/tools/v1alpha1"
 )
 
@@ -27,13 +26,6 @@ func TestDaprDeploy(t *testing.T) {
 	instance, err := dp.Apply(
 		test.Ctx(),
 		daprAc.Dapr(xid.New().String(), ns.Name).
-			// This should not be needed but for some reasons, the
-			// applyconfiguration-gen tool sets a wrong APIVersion
-			// for the Dapr type (tools/v1alpha1 instead of the one
-			// with the domain tools.dapr.io/v1alpha1).
-			//
-			// TODO: figure out why
-			WithAPIVersion(daprApi.GroupVersion.String()).
 			WithSpec(daprAc.DaprSpec().
 				WithValues(nil),
 			),

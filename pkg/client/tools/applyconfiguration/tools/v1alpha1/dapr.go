@@ -39,7 +39,7 @@ func Dapr(name, namespace string) *DaprApplyConfiguration {
 	b.WithName(name)
 	b.WithNamespace(namespace)
 	b.WithKind("Dapr")
-	b.WithAPIVersion("tools/v1alpha1")
+	b.WithAPIVersion("tools.dapr.io/v1alpha1")
 	return b
 }
 
