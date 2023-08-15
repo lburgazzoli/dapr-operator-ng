@@ -3,12 +3,16 @@ package e2e
 import (
 	"testing"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
 	"github.com/onsi/gomega"
 	"github.com/rs/xid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/lburgazzoli/dapr-operator-ng/test/support"
+	. "github.com/onsi/gomega"
 
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/tools/applyconfiguration/tools/v1alpha1"
@@ -24,8 +28,10 @@ func TestDaprDeploy(t *testing.T) {
 	instance, err := dp.Apply(
 		test.Ctx(),
 		daprAc.Dapr(xid.New().String(), ns.Name).
-			// This should not be needed but for some reasons, client-gen
-			// sets the wrong APIVersion (tools/v1alpha1)
+			// This should not be needed but for some reasons, the
+			// applyconfiguration-gen tool sets a wrong APIVersion
+			// for the Dapr type (tools/v1alpha1 instead of the one
+			// with the domain tools.dapr.io/v1alpha1).
 			//
 			// TODO: figure out why
 			WithAPIVersion(daprApi.GroupVersion.String()).
@@ -35,6 +41,13 @@ func TestDaprDeploy(t *testing.T) {
 		metav1.ApplyOptions{
 			FieldManager: "dapr-test",
 		})
+
+	test.Eventually(Deployment(test, instance, "dapr-operator"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+	test.Eventually(Deployment(test, instance, "dapr-sentry"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+	test.Eventually(Deployment(test, instance, "dapr-sidecar-injector"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
 
 	test.T().Cleanup(func() {
 		test.Expect(
