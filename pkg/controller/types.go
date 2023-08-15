@@ -15,7 +15,8 @@ const (
 	KubernetesLabelAppManagedBy = "app.kubernetes.io/managed-by"
 
 	DaprResourceGeneration = "daprs.dapr.io/resource.generation"
-	DaprResourceRef        = "daprs.dapr.io/resource.ref"
+	DaprResourceName       = "daprs.dapr.io/resource.name"
+	DaprResourceNamespace  = "daprs.dapr.io/resource.namespace"
 
 	SyncInterval     = 5 * time.Second
 	RetryInterval    = 10 * time.Second

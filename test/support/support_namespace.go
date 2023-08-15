@@ -12,7 +12,7 @@ func createTestNamespace(t Test, options ...Option[*corev1.Namespace]) *corev1.N
 
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "kaoto-test-e2e-" + xid.New().String(),
+			Name: "dapr-test-e2e-" + xid.New().String(),
 		},
 	}
 

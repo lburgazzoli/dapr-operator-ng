@@ -64,10 +64,19 @@ func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
 		return fmt.Errorf("cannot discover GVK types: %w", err)
 	}
 
-	ref, err := labels.NewRequirement(
-		controller.DaprResourceRef,
+	namespace, err := labels.NewRequirement(
+		controller.DaprResourceNamespace,
 		selection.Equals,
-		[]string{rc.Resource.Namespace + "-" + rc.Resource.Name})
+		[]string{rc.Resource.Namespace})
+
+	if err != nil {
+		return errors.Wrap(err, "cannot determine ref requirement")
+	}
+
+	name, err := labels.NewRequirement(
+		controller.DaprResourceName,
+		selection.Equals,
+		[]string{rc.Resource.Name})
 
 	if err != nil {
 		return errors.Wrap(err, "cannot determine ref requirement")
@@ -83,7 +92,8 @@ func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
 	}
 
 	selector := labels.NewSelector().
-		Add(*ref).
+		Add(*namespace).
+		Add(*name).
 		Add(*generation)
 
 	return a.deleteEachOf(ctx, rc, deletableGVKs, selector)

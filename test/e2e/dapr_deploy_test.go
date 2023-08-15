@@ -41,12 +41,8 @@ func TestDaprDeploy(t *testing.T) {
 			FieldManager: "dapr-test",
 		})
 
-	test.Eventually(Deployment(test, instance, "dapr-operator"), TestTimeoutLong).Should(
-		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
-	test.Eventually(Deployment(test, instance, "dapr-sentry"), TestTimeoutLong).Should(
-		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
-	test.Eventually(Deployment(test, instance, "dapr-sidecar-injector"), TestTimeoutLong).Should(
-		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+	test.Expect(err).
+		ToNot(HaveOccurred())
 
 	test.T().Cleanup(func() {
 		test.Expect(
@@ -56,7 +52,11 @@ func TestDaprDeploy(t *testing.T) {
 		).ToNot(HaveOccurred())
 	})
 
-	test.Expect(err).
-		ToNot(HaveOccurred())
+	test.Eventually(Deployment(test, instance, "dapr-operator"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+	test.Eventually(Deployment(test, instance, "dapr-sentry"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+	test.Eventually(Deployment(test, instance, "dapr-sidecar-injector"), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
 
 }

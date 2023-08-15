@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -88,7 +87,8 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 		resources.Labels(&obj, map[string]string{
 			controller.DaprResourceGeneration: strconv.FormatInt(rc.Resource.Generation, 10),
-			controller.DaprResourceRef:        rc.Resource.Namespace + "-" + rc.Resource.Name,
+			controller.DaprResourceName:       rc.Resource.Name,
+			controller.DaprResourceNamespace:  rc.Resource.Namespace,
 		})
 
 		switch dc.(type) {
@@ -109,7 +109,10 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 						handler.OnlyControllerOwner()),
 					predicate.And(
 						&predicates.HasLabel{
-							Name: controller.DaprResourceRef,
+							Name: controller.DaprResourceName,
+						},
+						&predicates.HasLabel{
+							Name: controller.DaprResourceNamespace,
 						},
 						&predicates.DependentPredicate{
 							WatchDelete: true,
@@ -141,26 +144,28 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 						if labels == nil {
 							return nil
 						}
-						ref := labels[controller.DaprResourceRef]
-						if ref == "" {
+						name := labels[controller.DaprResourceName]
+						if name == "" {
 							return nil
 						}
-
-						parts := strings.SplitN(ref, "-", 2)
-						if len(parts) != 2 {
+						namespace := labels[controller.DaprResourceNamespace]
+						if namespace == "" {
 							return nil
 						}
 
 						return []reconcile.Request{{
 							NamespacedName: types.NamespacedName{
-								Name:      parts[1],
-								Namespace: parts[0],
+								Name:      name,
+								Namespace: namespace,
 							},
 						}}
 					}),
 					predicate.And(
 						&predicates.HasLabel{
-							Name: controller.DaprResourceRef,
+							Name: controller.DaprResourceName,
+						},
+						&predicates.HasLabel{
+							Name: controller.DaprResourceNamespace,
 						},
 						&predicates.DependentPredicate{
 							WatchDelete: true,
@@ -238,7 +243,7 @@ func (a *ApplyAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) er
 				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
 			})
 
-			if err != nil {
+			if err != nil && !k8serrors.IsNotFound(err) {
 				return errors.Wrapf(err, "cannot delete object %s", resources.Ref(&obj))
 			}
 

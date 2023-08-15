@@ -7,13 +7,31 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
   - events
   verbs:
-  - create
+  - '*'
 - apiGroups:
   - ""
   resources:
   - secrets
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - '*'
+- apiGroups:
+  - ""
+  resources:
+  - services
   verbs:
   - '*'
 - apiGroups:

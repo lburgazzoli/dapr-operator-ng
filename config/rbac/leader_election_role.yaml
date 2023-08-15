@@ -10,6 +10,7 @@ metadata:
     app.kubernetes.io/part-of: dapr-operator-ng
     app.kubernetes.io/managed-by: kustomize
   name: dapr-controller-leader-election-role
+  namespace: dapr-system
 rules:
 - apiGroups:
   - ""

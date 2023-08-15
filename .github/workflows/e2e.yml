@@ -18,7 +18,7 @@ jobs:
       - name: "Publish Image"
         id: "publish"
         run: |
-          export UUID=$(uuidgen)
+          export UUID=$(uuidgen | tr "[:upper:]" "[:lower:]")
           export IMG="ttl.sh/${UUID}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}:1h"
           
           echo $IMG
@@ -34,7 +34,7 @@ jobs:
     strategy:
       matrix:
         kubernetes-version:
-          - "1.27.3"
+          - "1.27.4"
     steps:
       - name: "Checkout"
         uses: actions/checkout@v3
@@ -50,16 +50,16 @@ jobs:
           registry: false
           node_image: kindest/node:v${{ matrix.kubernetes-version }}
           config: test/e2e/kind.yaml
-      - name: 'SetUp Kind Ingress'
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-          kubectl wait \
-            --namespace=ingress-nginx \
-            --for=condition=ready \
-            pod \
-            --selector=app.kubernetes.io/component=controller \
-            --timeout=90s
+#      - name: 'SetUp Kind Ingress'
+#        run: |
+#          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+#
+#          kubectl wait \
+#            --namespace=ingress-nginx \
+#            --for=condition=ready \
+#            pod \
+#            --selector=app.kubernetes.io/component=controller \
+#            --timeout=90s
       - name: "SetUp Dapr Operator"
         run: |          
           make deploy/e2e
