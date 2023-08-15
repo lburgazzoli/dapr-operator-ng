@@ -7,7 +7,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
-	"github.com/onsi/gomega"
 	"github.com/rs/xid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -54,10 +53,10 @@ func TestDaprDeploy(t *testing.T) {
 			dp.Delete(test.Ctx(), instance.Name, metav1.DeleteOptions{
 				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
 			}),
-		).ToNot(gomega.HaveOccurred())
+		).ToNot(HaveOccurred())
 	})
 
 	test.Expect(err).
-		ToNot(gomega.HaveOccurred())
+		ToNot(HaveOccurred())
 
 }
