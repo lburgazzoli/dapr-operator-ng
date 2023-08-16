@@ -6,7 +6,6 @@ import (
 
 	"github.com/wI2L/jsondiff"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -108,18 +107,4 @@ func (p DependentPredicate) Update(e event.UpdateEvent) bool {
 		"diff", string(d))
 
 	return true
-}
-
-func removeTimeFromManagedFields(fields []metav1.ManagedFieldsEntry) []metav1.ManagedFieldsEntry {
-	if fields == nil {
-		return nil
-	}
-
-	newFields := make([]metav1.ManagedFieldsEntry, 0)
-	for _, field := range fields {
-		field.Time = nil
-		newFields = append(newFields, field)
-	}
-
-	return newFields
 }

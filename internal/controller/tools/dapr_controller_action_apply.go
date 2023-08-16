@@ -3,9 +3,10 @@ package tools
 import (
 	"context"
 	"fmt"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/transformers"
 	"sort"
 	"strconv"
+
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/transformers"
 
 	corev1 "k8s.io/api/core/v1"
 

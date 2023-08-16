@@ -2,6 +2,7 @@ package transformers
 
 import (
 	"context"
+
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
