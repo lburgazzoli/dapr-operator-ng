@@ -2,12 +2,11 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    control-plane: dapr-controller
-    app.kubernetes.io/name: namespace
-    app.kubernetes.io/instance: dapr-system
-    app.kubernetes.io/component: dapr-controller
-    app.kubernetes.io/created-by: dapr-operator-ng
-    app.kubernetes.io/part-of: dapr-operator-ng
+    control-plane: dapr-control-plane
+    app.kubernetes.io/name: dapr-system
+    app.kubernetes.io/instance: dapr-control-plane-namespace
+    app.kubernetes.io/component: namespace
+    app.kubernetes.io/part-of: dapr-control-plane
     app.kubernetes.io/managed-by: kustomize
   name: dapr-system
 ---
@@ -17,24 +16,23 @@ metadata:
   name: dapr-controller
   namespace: dapr-system
   labels:
-    control-plane: dapr-controller
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: dapr-controller
-    app.kubernetes.io/component: dapr-controller
-    app.kubernetes.io/created-by: dapr-operator-ng
-    app.kubernetes.io/part-of: dapr-operator-ng
+    control-plane: dapr-control-plane
+    app.kubernetes.io/name: dapr-control-plane
+    app.kubernetes.io/instance: dapr-control-plane-deployment
+    app.kubernetes.io/component: deployment
+    app.kubernetes.io/part-of: dapr-control-plane
     app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
     matchLabels:
-      control-plane: dapr-controller
+      control-plane: dapr-control-plane
   replicas: 1
   template:
     metadata:
       annotations:
         kubectl.kubernetes.io/default-container: dapr-controller
       labels:
-        control-plane: dapr-controller
+        control-plane: dapr-control-plane
     spec:
       # TODO(user): Uncomment the following code to configure the nodeAffinity expression
       # according to the platforms which are supported by your solution.

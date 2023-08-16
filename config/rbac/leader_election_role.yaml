@@ -4,12 +4,11 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/name: role
-    app.kubernetes.io/instance: dapr-controller-leader-election-role
+    app.kubernetes.io/instance: dapr-control-plane-leader-election-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: dapr-operator-ng
-    app.kubernetes.io/part-of: dapr-operator-ng
+    app.kubernetes.io/part-of: dapr-control-plane
     app.kubernetes.io/managed-by: kustomize
-  name: dapr-controller-leader-election-role
+  name: dapr-control-plane-leader-election-role
   namespace: dapr-system
 rules:
 - apiGroups:

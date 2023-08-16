@@ -13,7 +13,7 @@ import (
 	. "github.com/lburgazzoli/dapr-operator-ng/test/support"
 	. "github.com/onsi/gomega"
 
-	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/tools/applyconfiguration/tools/v1alpha1"
+	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/applyconfiguration/operator/v1alpha1"
 )
 
 func TestDaprDeploy(t *testing.T) {
@@ -21,12 +21,12 @@ func TestDaprDeploy(t *testing.T) {
 	test.T().Parallel()
 
 	ns := test.NewTestNamespace()
-	dp := test.Client().Dapr.ToolsV1alpha1().Daprs(ns.Name)
+	dp := test.Client().Dapr.OperatorV1alpha1().DaprControlPlanes(ns.Name)
 
 	instance, err := dp.Apply(
 		test.Ctx(),
-		daprAc.Dapr(xid.New().String(), ns.Name).
-			WithSpec(daprAc.DaprSpec().
+		daprAc.DaprControlPlane(xid.New().String(), ns.Name).
+			WithSpec(daprAc.DaprControlPlaneSpec().
 				WithValues(nil),
 			),
 		metav1.ApplyOptions{

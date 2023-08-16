@@ -93,7 +93,7 @@ jobs:
             --namespace=dapr-system \
             --for=condition=ready \
             pod \
-            --selector=control-plane=dapr-controller \
+            --selector=control-plane=dapr-control-plane \
             --timeout=90s
       - name: "Run e2e"
         run: |

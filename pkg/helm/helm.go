@@ -9,7 +9,7 @@ import (
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/utils/mergemap"
 
-	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
+	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
@@ -33,7 +33,7 @@ type Engine struct {
 	decoder runtime.Serializer
 }
 
-func (e *Engine) Render(c *chart.Chart, dapr *daprApi.Dapr, overrides map[string]interface{}) ([]unstructured.Unstructured, error) {
+func (e *Engine) Render(c *chart.Chart, dapr *daprApi.DaprControlPlane, overrides map[string]interface{}) ([]unstructured.Unstructured, error) {
 	rv, err := e.renderValues(c, dapr, overrides)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot render values")
@@ -119,7 +119,7 @@ func (e *Engine) decode(content []byte) ([]unstructured.Unstructured, error) {
 	return results, nil
 }
 
-func (e *Engine) renderValues(c *chart.Chart, dapr *daprApi.Dapr, overrides map[string]interface{}) (chartutil.Values, error) {
+func (e *Engine) renderValues(c *chart.Chart, dapr *daprApi.DaprControlPlane, overrides map[string]interface{}) (chartutil.Values, error) {
 	values := make(map[string]interface{})
 
 	if dapr.Spec.Values != nil {

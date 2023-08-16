@@ -125,6 +125,32 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - operator.dapr.io
+  resources:
+  - daprcontrolplanes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operator.dapr.io
+  resources:
+  - daprcontrolplanes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - operator.dapr.io
+  resources:
+  - daprcontrolplanes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - rbac.authorization.k8s.io
   resources:
   - clusterrolebindings
@@ -148,29 +174,3 @@ rules:
   - roles
   verbs:
   - '*'
-- apiGroups:
-  - tools.dapr.io
-  resources:
-  - daprs
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - tools.dapr.io
-  resources:
-  - daprs/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - tools.dapr.io
-  resources:
-  - daprs/status
-  verbs:
-  - get
-  - patch
-  - update

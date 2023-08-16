@@ -4,7 +4,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   labels:
-    control-plane: dapr-controller
+    control-plane: dapr-control-plane
     app.kubernetes.io/name: servicemonitor
     app.kubernetes.io/instance: dapr-controller-metrics-monitor
     app.kubernetes.io/component: metrics
