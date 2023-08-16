@@ -28,6 +28,7 @@ type ReconciliationRequest struct {
 	ClusterType controller.ClusterType
 	Resource    *daprApi.Dapr
 	Chart       *chart.Chart
+	Overrides   map[string]interface{}
 }
 
 type Action interface {

@@ -50,6 +50,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		Reconciler:  r,
 		Resource:    &daprvApi.Dapr{},
 		Chart:       r.c,
+		Overrides: map[string]interface{}{
+			"dapr_operator":  map[string]interface{}{"runAsNonRoot": "true"},
+			"dapr_placement": map[string]interface{}{"runAsNonRoot": "true"},
+			"dapr_sentry":    map[string]interface{}{"runAsNonRoot": "true"},
+			"dapr_dashboard": map[string]interface{}{"runAsNonRoot": "true"},
+		},
 	}
 
 	err := r.Get(ctx, req.NamespacedName, rr.Resource)

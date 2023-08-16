@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/utils/mergemap"
+
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 
 	"github.com/pkg/errors"
@@ -31,8 +33,8 @@ type Engine struct {
 	decoder runtime.Serializer
 }
 
-func (e *Engine) Render(c *chart.Chart, dapr *daprApi.Dapr) ([]unstructured.Unstructured, error) {
-	rv, err := toRenderValues(c, dapr)
+func (e *Engine) Render(c *chart.Chart, dapr *daprApi.Dapr, overrides map[string]interface{}) ([]unstructured.Unstructured, error) {
+	rv, err := e.renderValues(c, dapr, overrides)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot render values")
 	}
@@ -117,7 +119,7 @@ func (e *Engine) decode(content []byte) ([]unstructured.Unstructured, error) {
 	return results, nil
 }
 
-func toRenderValues(c *chart.Chart, dapr *daprApi.Dapr) (chartutil.Values, error) {
+func (e *Engine) renderValues(c *chart.Chart, dapr *daprApi.Dapr, overrides map[string]interface{}) (chartutil.Values, error) {
 	values := make(map[string]interface{})
 
 	if dapr.Spec.Values != nil {
@@ -126,11 +128,14 @@ func toRenderValues(c *chart.Chart, dapr *daprApi.Dapr) (chartutil.Values, error
 		}
 	}
 
-	if err := chartutil.ProcessDependencies(c, values); err != nil {
+	values = mergemap.Merge(values, overrides)
+
+	err := chartutil.ProcessDependencies(c, values)
+	if err != nil {
 		return chartutil.Values{}, errors.Wrap(err, "cannot process dependencies")
 	}
 
-	return chartutil.ToRenderValues(
+	rv, err := chartutil.ToRenderValues(
 		c,
 		values,
 		chartutil.ReleaseOptions{
@@ -141,4 +146,11 @@ func toRenderValues(c *chart.Chart, dapr *daprApi.Dapr) (chartutil.Values, error
 			IsUpgrade: true,
 		},
 		nil)
+
+	if err != nil {
+		return chartutil.Values{}, errors.Wrap(err, "cannot render values")
+	}
+
+	return rv, nil
+
 }

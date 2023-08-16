@@ -3,14 +3,11 @@ package tools
 import (
 	"context"
 	"fmt"
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/transformers"
 	"sort"
 	"strconv"
 
 	corev1 "k8s.io/api/core/v1"
-
-	"k8s.io/apimachinery/pkg/types"
-	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
@@ -29,8 +26,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
-
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 func NewApplyAction() Action {
@@ -52,7 +47,7 @@ func (a *ApplyAction) Configure(_ context.Context, _ *client.Client, b *builder.
 }
 
 func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error {
-	items, err := a.engine.Render(rc.Chart, rc.Resource)
+	items, err := a.engine.Render(rc.Chart, rc.Resource, rc.Overrides)
 	if err != nil {
 		return errors.Wrap(err, "cannot render a chart")
 	}
@@ -104,21 +99,8 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			if _, ok := a.subscriptions[r]; !ok {
 				err = rc.Reconciler.Watch(
 					&obj,
-					rc.Reconciler.EnqueueRequestForOwner(
-						&daprApi.Dapr{},
-						handler.OnlyControllerOwner()),
-					predicate.And(
-						&predicates.HasLabel{
-							Name: controller.DaprResourceName,
-						},
-						&predicates.HasLabel{
-							Name: controller.DaprResourceNamespace,
-						},
-						&predicates.DependentPredicate{
-							WatchDelete: true,
-							WatchUpdate: a.watchForUpdates(gvk),
-						},
-					),
+					rc.Reconciler.EnqueueRequestForOwner(&daprApi.Dapr{}, handler.OnlyControllerOwner()),
+					predicates.DependantWithLabels(a.watchForUpdates(gvk), true),
 				)
 
 				if err != nil {
@@ -139,39 +121,8 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			if _, ok := a.subscriptions[r]; !ok {
 				err = rc.Reconciler.Watch(
 					&obj,
-					rc.Reconciler.EnqueueRequestsFromMapFunc(func(ctx context.Context, object ctrlCli.Object) []reconcile.Request {
-						labels := object.GetLabels()
-						if labels == nil {
-							return nil
-						}
-						name := labels[controller.DaprResourceName]
-						if name == "" {
-							return nil
-						}
-						namespace := labels[controller.DaprResourceNamespace]
-						if namespace == "" {
-							return nil
-						}
-
-						return []reconcile.Request{{
-							NamespacedName: types.NamespacedName{
-								Name:      name,
-								Namespace: namespace,
-							},
-						}}
-					}),
-					predicate.And(
-						&predicates.HasLabel{
-							Name: controller.DaprResourceName,
-						},
-						&predicates.HasLabel{
-							Name: controller.DaprResourceNamespace,
-						},
-						&predicates.DependentPredicate{
-							WatchDelete: true,
-							WatchUpdate: a.watchForUpdates(gvk),
-						},
-					),
+					rc.Reconciler.EnqueueRequestsFromMapFunc(transformers.LabelsToRequest),
+					predicates.DependantWithLabels(a.watchForUpdates(gvk), true),
 				)
 
 				if err != nil {
@@ -224,7 +175,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 }
 
 func (a *ApplyAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) error {
-	items, err := a.engine.Render(rc.Chart, rc.Resource)
+	items, err := a.engine.Render(rc.Chart, rc.Resource, rc.Overrides)
 	if err != nil {
 		return errors.Wrap(err, "cannot render a chart")
 	}

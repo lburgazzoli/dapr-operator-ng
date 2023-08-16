@@ -79,11 +79,11 @@ func (p DependentPredicate) Update(e event.UpdateEvent) bool {
 	delete(oldObj.Object, "status")
 	delete(newObj.Object, "status")
 
+	// Reset field not meaningful for comparison
 	oldObj.SetResourceVersion("")
 	newObj.SetResourceVersion("")
-
-	oldObj.SetManagedFields(removeTimeFromManagedFields(oldObj.GetManagedFields()))
-	newObj.SetManagedFields(removeTimeFromManagedFields(newObj.GetManagedFields()))
+	oldObj.SetManagedFields(nil)
+	newObj.SetManagedFields(nil)
 
 	if reflect.DeepEqual(oldObj.Object, newObj.Object) {
 		return false

@@ -77,11 +77,6 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 		rec.c.Values = make(map[string]interface{})
 	}
 
-	rec.c.Values["dapr_operator.runAsNonRoot"] = "true"
-	rec.c.Values["dapr_placement.runAsNonRoot"] = "true"
-	rec.c.Values["dapr_sentry.runAsNonRoot"] = "true"
-	rec.c.Values["dapr_dashboard.runAsNonRoot"] = "true"
-
 	return &rec, nil
 }
 
