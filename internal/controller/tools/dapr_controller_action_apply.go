@@ -14,7 +14,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/tools/v1alpha1"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -60,7 +59,10 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 	// TODO: this must be ordered by priority/relations
 	sort.Slice(items, func(i int, j int) bool {
-		return items[i].GroupVersionKind().Kind+":"+items[i].GetName() < items[j].GroupVersionKind().Kind+":"+items[j].GetName()
+		istr := items[i].GroupVersionKind().Kind + ":" + items[i].GetName()
+		jstr := items[j].GroupVersionKind().Kind + ":" + items[j].GetName()
+
+		return istr < jstr
 	})
 
 	reinstall := rc.Resource.Generation != rc.Resource.Status.ObservedGeneration
@@ -110,10 +112,11 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			r := gvk.GroupVersion().String() + ":" + gvk.Kind
 
 			if _, ok := a.subscriptions[r]; !ok {
-				err = rc.Reconciler.Watch(
+				err = rc.Reconciler.WatchDependant(
 					&obj,
 					rc.Reconciler.EnqueueRequestForOwner(&daprApi.Dapr{}, handler.OnlyControllerOwner()),
-					predicates.DependantWithLabels(a.watchForUpdates(gvk), true),
+					a.watchForUpdates(gvk),
+					true,
 				)
 
 				if err != nil {
@@ -136,10 +139,11 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			r := gvk.GroupVersion().String() + ":" + gvk.Kind
 
 			if _, ok := a.subscriptions[r]; !ok {
-				err = rc.Reconciler.Watch(
+				err = rc.Reconciler.WatchDependant(
 					&obj,
 					rc.Reconciler.EnqueueRequestsFromMapFunc(transformers.LabelsToRequest),
-					predicates.DependantWithLabels(a.watchForUpdates(gvk), true),
+					a.watchForUpdates(gvk),
+					true,
 				)
 
 				if err != nil {

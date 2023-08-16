@@ -160,11 +160,11 @@ func (r *Reconciler) Watch(obj ctrlCli.Object, eh handler.EventHandler, predicat
 		predicates...)
 }
 
-func (r *Reconciler) WatchDependant(obj ctrlCli.Object, eh handler.EventHandler, updates bool, delete bool) error {
+func (r *Reconciler) WatchDependant(obj ctrlCli.Object, eh handler.EventHandler, watchUpdates bool, watchDelete bool) error {
 	return r.Watch(
 		obj,
 		eh,
-		predicates.DependantWithLabels(updates, delete),
+		predicates.DependantWithLabels(watchUpdates, watchDelete),
 	)
 }
 
