@@ -104,8 +104,7 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 }
 
 func (gc *GC) canBeDeleted(_ context.Context, gvk schema.GroupVersionKind) bool {
-	switch {
-	case gvk.Group == "coordination.k8s.io" && gvk.Kind == "Lease":
+	if gvk.Group == "coordination.k8s.io" && gvk.Kind == "Lease" {
 		return false
 	}
 
