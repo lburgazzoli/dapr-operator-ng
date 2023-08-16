@@ -14,11 +14,11 @@ func LabelsToRequest(_ context.Context, object ctrlCli.Object) []reconcile.Reque
 	if labels == nil {
 		return nil
 	}
-	name := labels[controller.DaprResourceName]
+	name := labels[controller.DaprReleaseName]
 	if name == "" {
 		return nil
 	}
-	namespace := labels[controller.DaprResourceNamespace]
+	namespace := labels[controller.DaprReleaseNamespace]
 	if namespace == "" {
 		return nil
 	}

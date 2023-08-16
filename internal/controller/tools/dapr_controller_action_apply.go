@@ -82,9 +82,9 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		}
 
 		resources.Labels(&obj, map[string]string{
-			controller.DaprResourceGeneration: strconv.FormatInt(rc.Resource.Generation, 10),
-			controller.DaprResourceName:       rc.Resource.Name,
-			controller.DaprResourceNamespace:  rc.Resource.Namespace,
+			controller.DaprReleaseGeneration: strconv.FormatInt(rc.Resource.Generation, 10),
+			controller.DaprReleaseName:       rc.Resource.Name,
+			controller.DaprReleaseNamespace:  rc.Resource.Namespace,
 		})
 
 		switch dc.(type) {
@@ -112,9 +112,11 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			}
 		// ClusteredResource: in this case, ownership based filtering is not supported
 		// as you cannot have a non namespaced owner. For such reason, the resource for
-		// which a reconcile should be triggered can be identified by using a label
+		// which a reconcile should be triggered can be identified by using the labels
+		// added by the controller to all the generated resources
 		//
-		//    daprs.dapr.io/resource.ref = ${namespace}-${name}
+		//    daprs.dapr.io/resource.namespace = ${namespace}
+		//    daprs.dapr.io/resource.name =${name}
 		//
 		case *client.ClusteredResource:
 			r := gvk.GroupVersion().String() + ":" + gvk.Kind
@@ -144,11 +146,18 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 			if old != nil {
 				// Every time the template is rendered, the helm function genSignedCert kicks in and
-				// re-generated certs which causes a number os side effects, like deployments restart
-				// etc.
+				// re-generated certs which causes a number os side effects and makes the set-up quite
+				// unstable. As consequence some resources are not meant to be watched and re-created
+				// unless the Dapr CR generation changes (which means the Spec has changed) or the
+				// resource impacted by the genSignedCert hook is deleted.
 				//
-				// As consequence some resources are not meant to be watched and re-created unless the
-				// Dapr CR is updated.
+				// Ideally on OpenShift it would be good to leverage the service serving certificates
+				// capability.
+				//
+				// Related info:
+				// - https://docs.openshift.com/container-platform/4.13/security/certificates/service-serving-certificate.html
+				// - https://github.com/dapr/dapr/issues/3968
+				// - https://github.com/dapr/dapr/issues/6500
 				a.l.Info("run",
 					"apply", "false",
 					"ref", resources.Ref(&obj),

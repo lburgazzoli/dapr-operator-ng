@@ -65,7 +65,7 @@ func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
 	}
 
 	namespace, err := labels.NewRequirement(
-		controller.DaprResourceNamespace,
+		controller.DaprReleaseNamespace,
 		selection.Equals,
 		[]string{rc.Resource.Namespace})
 
@@ -74,7 +74,7 @@ func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
 	}
 
 	name, err := labels.NewRequirement(
-		controller.DaprResourceName,
+		controller.DaprReleaseName,
 		selection.Equals,
 		[]string{rc.Resource.Name})
 
@@ -83,7 +83,7 @@ func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
 	}
 
 	generation, err := labels.NewRequirement(
-		controller.DaprResourceGeneration,
+		controller.DaprReleaseGeneration,
 		selection.LessThan,
 		[]string{strconv.FormatInt(rc.Resource.Status.ObservedGeneration, 10)})
 

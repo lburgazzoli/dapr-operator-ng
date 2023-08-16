@@ -14,15 +14,15 @@ const (
 	KubernetesLabelAppPartOf    = "app.kubernetes.io/part-of"
 	KubernetesLabelAppManagedBy = "app.kubernetes.io/managed-by"
 
-	DaprResourceGeneration = "daprs.dapr.io/resource.generation"
-	DaprResourceName       = "daprs.dapr.io/resource.name"
-	DaprResourceNamespace  = "daprs.dapr.io/resource.namespace"
+	DaprReleaseGeneration = "daprs.tools.dapr.io/release.generation"
+	DaprReleaseName       = "daprs.tools.dapr.io/release.name"
+	DaprReleaseNamespace  = "daprs.tools.dapr.io/release.namespace"
 
 	SyncInterval     = 5 * time.Second
 	RetryInterval    = 10 * time.Second
 	ConflictInterval = 1 * time.Second
-	FinalizerName    = "dapr.io/finalizer"
-	FieldManager     = "dapr-controller"
+	FinalizerName    = "tools.dapr.io/finalizer"
+	FieldManager     = "dapr-release-controller"
 )
 
 type Options struct {

@@ -8,10 +8,10 @@ import (
 func DependantWithLabels(watchUpdate bool, watchDelete bool) predicate.Predicate {
 	return predicate.And(
 		&HasLabel{
-			Name: controller.DaprResourceName,
+			Name: controller.DaprReleaseName,
 		},
 		&HasLabel{
-			Name: controller.DaprResourceNamespace,
+			Name: controller.DaprReleaseNamespace,
 		},
 		&DependentPredicate{
 			WatchUpdate: watchUpdate,
