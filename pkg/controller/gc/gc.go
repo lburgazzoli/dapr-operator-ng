@@ -1,18 +1,14 @@
-package tools
+package gc
 
 import (
 	"context"
-	"fmt"
 	"slices"
-	"strconv"
 	"sync"
 	"time"
 
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/resources"
-
 	"github.com/go-logr/logr"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/client"
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/resources"
 	"github.com/pkg/errors"
 	"golang.org/x/time/rate"
 	authorization "k8s.io/api/authorization/v1"
@@ -21,86 +17,40 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/client-go/discovery"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	ctrlCli "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func NewGCAction() Action {
-	return &GCAction{
+func New() *GC {
+	return &GC{
+		l:               ctrl.Log.WithName("gc"),
 		limiter:         rate.NewLimiter(rate.Every(time.Minute), 1),
 		collectableGVKs: make(map[schema.GroupVersionKind]struct{}),
-		l:               ctrl.Log.WithName("action").WithName("gc"),
 	}
 }
 
-type GCAction struct {
+type GC struct {
 	l               logr.Logger
 	lock            sync.Mutex
 	limiter         *rate.Limiter
 	collectableGVKs map[schema.GroupVersionKind]struct{}
 }
 
-func (a *GCAction) Configure(_ context.Context, _ *client.Client, b *builder.Builder) (*builder.Builder, error) {
-	return b, nil
-}
+func (gc *GC) Run(ctx context.Context, ns string, c *client.Client, selector labels.Selector) error {
+	gc.lock.Lock()
+	defer gc.lock.Unlock()
 
-func (a *GCAction) Run(ctx context.Context, rc *ReconciliationRequest) error {
-
-	return a.gc(ctx, rc)
-}
-
-func (a *GCAction) Cleanup(ctx context.Context, rc *ReconciliationRequest) error {
-	return a.gc(ctx, rc)
-}
-
-func (a *GCAction) gc(ctx context.Context, rc *ReconciliationRequest) error {
-	a.l.Info("run")
-
-	deletableGVKs, err := a.getDeletableTypes(ctx, rc)
+	err := gc.computeDeletableTypes(ctx, ns, c)
 	if err != nil {
-		return fmt.Errorf("cannot discover GVK types: %w", err)
+		return errors.Wrap(err, "cannot discover GVK types")
 	}
 
-	namespace, err := labels.NewRequirement(
-		controller.DaprReleaseNamespace,
-		selection.Equals,
-		[]string{rc.Resource.Namespace})
-
-	if err != nil {
-		return errors.Wrap(err, "cannot determine ref requirement")
-	}
-
-	name, err := labels.NewRequirement(
-		controller.DaprReleaseName,
-		selection.Equals,
-		[]string{rc.Resource.Name})
-
-	if err != nil {
-		return errors.Wrap(err, "cannot determine ref requirement")
-	}
-
-	generation, err := labels.NewRequirement(
-		controller.DaprReleaseGeneration,
-		selection.LessThan,
-		[]string{strconv.FormatInt(rc.Resource.Status.ObservedGeneration, 10)})
-
-	if err != nil {
-		return errors.Wrap(err, "cannot determine generation requirement")
-	}
-
-	selector := labels.NewSelector().
-		Add(*namespace).
-		Add(*name).
-		Add(*generation)
-
-	return a.deleteEachOf(ctx, rc, deletableGVKs, selector)
+	return gc.deleteEachOf(ctx, c, selector)
 }
 
-func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, deletableGVKs map[schema.GroupVersionKind]struct{}, selector labels.Selector) error {
-	for GVK := range deletableGVKs {
+func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector labels.Selector) error {
+	for GVK := range gc.collectableGVKs {
 		items := unstructured.UnstructuredList{
 			Object: map[string]interface{}{
 				"apiVersion": GVK.GroupVersion().String(),
@@ -111,7 +61,7 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 			ctrlCli.MatchingLabelsSelector{Selector: selector},
 		}
 
-		if err := rc.Client.List(ctx, &items, options...); err != nil {
+		if err := c.List(ctx, &items, options...); err != nil {
 			if !k8serrors.IsNotFound(err) {
 				return errors.Wrap(err, "cannot list child resources")
 			}
@@ -121,13 +71,13 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 		for i := range items.Items {
 			resource := items.Items[i]
 
-			if !a.canBeDeleted(ctx, rc, resource) {
+			if !gc.canBeDeleted(ctx, resource) {
 				continue
 			}
 
-			a.l.Info("deleting", "ref", resources.Ref(&resource))
+			gc.l.Info("deleting", "ref", resources.Ref(&resource))
 
-			err := rc.Client.Delete(ctx, &resource, ctrlCli.PropagationPolicy(metav1.DeletePropagationForeground))
+			err := c.Delete(ctx, &resource, ctrlCli.PropagationPolicy(metav1.DeletePropagationForeground))
 			if err != nil {
 				// The resource may have already been deleted
 				if !k8serrors.IsNotFound(err) {
@@ -142,36 +92,33 @@ func (a *GCAction) deleteEachOf(ctx context.Context, rc *ReconciliationRequest, 
 					resource.GetName())
 			}
 
-			a.l.Info("deleted", "ref", resources.Ref(&resource))
+			gc.l.Info("deleted", "ref", resources.Ref(&resource))
 		}
 	}
 
 	return nil
 }
 
-func (a *GCAction) canBeDeleted(_ context.Context, _ *ReconciliationRequest, _ unstructured.Unstructured) bool {
+func (gc *GC) canBeDeleted(_ context.Context, _ unstructured.Unstructured) bool {
 	return true
 }
 
-func (a *GCAction) getDeletableTypes(ctx context.Context, rc *ReconciliationRequest) (map[schema.GroupVersionKind]struct{}, error) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
-
+func (gc *GC) computeDeletableTypes(ctx context.Context, ns string, c *client.Client) error {
 	// Rate limit to avoid Discovery and SelfSubjectRulesReview requests at every reconciliation.
-	if !a.limiter.Allow() {
+	if !gc.limiter.Allow() {
 		// Return the cached set of garbage collectable GVKs.
-		return a.collectableGVKs, nil
+		return nil
 	}
 
 	// We rely on the discovery API to retrieve all the resources GVK,
 	// that results in an unbounded set that can impact garbage collection latency when scaling up.
-	items, err := rc.Client.Discovery.ServerPreferredNamespacedResources()
+	items, err := c.Discovery.ServerPreferredNamespacedResources()
 
 	// Swallow group discovery errors, e.g., Knative serving exposes
 	// an aggregated API for custom.metrics.k8s.io that requires special
 	// authentication scheme while discovering preferred resources.
 	if err != nil && !discovery.IsGroupDiscoveryFailedError(err) {
-		return nil, err
+		return err
 	}
 
 	// We only take types that support the "delete" verb,
@@ -182,12 +129,13 @@ func (a *GCAction) getDeletableTypes(ctx context.Context, rc *ReconciliationRequ
 	// We assume the operator has only to garbage collect the resources it has created.
 	ssrr := &authorization.SelfSubjectRulesReview{
 		Spec: authorization.SelfSubjectRulesReviewSpec{
-			Namespace: rc.Namespace,
+			Namespace: ns,
 		},
 	}
-	ssrr, err = rc.Client.AuthorizationV1().SelfSubjectRulesReviews().Create(ctx, ssrr, metav1.CreateOptions{})
+
+	ssrr, err = c.AuthorizationV1().SelfSubjectRulesReviews().Create(ctx, ssrr, metav1.CreateOptions{})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	GVKs := make(map[schema.GroupVersionKind]struct{})
@@ -198,8 +146,9 @@ func (a *GCAction) getDeletableTypes(ctx context.Context, rc *ReconciliationRequ
 				// Empty implies the group of the containing resource list should be used
 				gv, err := schema.ParseGroupVersion(res.GroupVersion)
 				if err != nil {
-					return nil, err
+					return err
 				}
+
 				resourceGroup = gv.Group
 			}
 		rule:
@@ -221,7 +170,7 @@ func (a *GCAction) getDeletableTypes(ctx context.Context, rc *ReconciliationRequ
 		}
 	}
 
-	a.collectableGVKs = GVKs
+	gc.collectableGVKs = GVKs
 
-	return a.collectableGVKs, nil
+	return nil
 }

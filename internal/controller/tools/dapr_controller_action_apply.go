@@ -6,7 +6,10 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/gc"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/transformers"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 
 	corev1 "k8s.io/api/core/v1"
 
@@ -34,11 +37,13 @@ func NewApplyAction() Action {
 		engine:        helm.NewEngine(),
 		l:             ctrl.Log.WithName("action").WithName("apply"),
 		subscriptions: make(map[string]struct{}),
+		gc:            gc.New(),
 	}
 }
 
 type ApplyAction struct {
 	engine        *helm.Engine
+	gc            *gc.GC
 	l             logr.Logger
 	subscriptions map[string]struct{}
 }
@@ -58,21 +63,25 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		return items[i].GroupVersionKind().Kind+":"+items[i].GetName() < items[j].GroupVersionKind().Kind+":"+items[j].GetName()
 	})
 
+	reinstall := rc.Resource.Generation != rc.Resource.Status.ObservedGeneration
+
+	if reinstall {
+		rc.Reconciler.Event(
+			rc.Resource,
+			corev1.EventTypeNormal,
+			"RenderFullHelmTemplate",
+			fmt.Sprintf("Render full Helm template as Dapr spec changed (observedGeneration: %d, generation: %d)",
+				rc.Resource.Status.ObservedGeneration,
+				rc.Resource.Generation),
+		)
+	}
+
 	for i := range items {
 		obj := items[i]
 		gvk := obj.GroupVersionKind()
 		installOnly := a.installOnly(gvk)
 
-		if rc.Resource.Generation != rc.Resource.Status.ObservedGeneration {
-			rc.Reconciler.Event(
-				rc.Resource,
-				corev1.EventTypeNormal,
-				"RenderFullHelmTemplate",
-				fmt.Sprintf("Render full Helm template as Dapr spec changed (observedGeneration: %d, generation: %d)",
-					rc.Resource.Status.ObservedGeneration,
-					rc.Resource.Generation),
-			)
-
+		if reinstall {
 			installOnly = false
 		}
 
@@ -88,9 +97,12 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		})
 
 		switch dc.(type) {
+
+		//
 		// NamespacedResource: in this case, filtering with ownership can be implemented
 		// as all the namespaced resources created by this controller have the Dapr CR as
 		// an owner
+		//
 		case *client.NamespacedResource:
 			obj.SetOwnerReferences(resources.OwnerReferences(rc.Resource))
 			obj.SetNamespace(rc.Resource.Namespace)
@@ -110,6 +122,8 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 
 				a.subscriptions[r] = struct{}{}
 			}
+
+		//
 		// ClusteredResource: in this case, ownership based filtering is not supported
 		// as you cannot have a non namespaced owner. For such reason, the resource for
 		// which a reconcile should be triggered can be identified by using the labels
@@ -145,6 +159,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			}
 
 			if old != nil {
+				//
 				// Every time the template is rendered, the helm function genSignedCert kicks in and
 				// re-generated certs which causes a number os side effects and makes the set-up quite
 				// unstable. As consequence some resources are not meant to be watched and re-created
@@ -158,6 +173,8 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 				// - https://docs.openshift.com/container-platform/4.13/security/certificates/service-serving-certificate.html
 				// - https://github.com/dapr/dapr/issues/3968
 				// - https://github.com/dapr/dapr/issues/6500
+				//
+
 				a.l.Info("run",
 					"apply", "false",
 					"ref", resources.Ref(&obj),
@@ -179,6 +196,31 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		a.l.Info("run",
 			"apply", "true",
 			"ref", resources.Ref(&obj))
+	}
+
+	//
+	// in case of a re-installation all the resources get re-rendered which means some of them
+	// may become obsolete (i.e. if some resources are moved from cluster to namespace scope)
+	// hence a sort of "garbage collector task" must be executed.
+	//
+	// The logic of the task it to delete all the resources that have a generation older than
+	// current CR one, which is propagated by the controller to all the rendered resources in
+	// the for of a labels:
+	//
+	// - daprs.tools.dapr.io/release.generation
+	//
+	if reinstall {
+		s, err := a.selector(rc)
+
+		if err != nil {
+			return errors.Wrap(err, "cannot compute gc selector")
+		}
+
+		a.l.Info("run gc")
+		err = a.gc.Run(ctx, rc.Resource.Namespace, rc.Client, s)
+		if err != nil {
+			return errors.Wrap(err, "cannot run gc")
+		}
 	}
 
 	return nil
@@ -235,4 +277,41 @@ func (a *ApplyAction) installOnly(gvk schema.GroupVersionKind) bool {
 	}
 
 	return false
+}
+
+func (a *ApplyAction) selector(rc *ReconciliationRequest) (labels.Selector, error) {
+
+	namespace, err := labels.NewRequirement(
+		controller.DaprReleaseNamespace,
+		selection.Equals,
+		[]string{rc.Resource.Namespace})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot determine release namespace requirement")
+	}
+
+	name, err := labels.NewRequirement(
+		controller.DaprReleaseName,
+		selection.Equals,
+		[]string{rc.Resource.Name})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot determine release name requirement")
+	}
+
+	generation, err := labels.NewRequirement(
+		controller.DaprReleaseGeneration,
+		selection.LessThan,
+		[]string{strconv.FormatInt(rc.Resource.Generation, 10)})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot determine generation requirement")
+	}
+
+	selector := labels.NewSelector().
+		Add(*namespace).
+		Add(*name).
+		Add(*generation)
+
+	return selector, nil
 }
