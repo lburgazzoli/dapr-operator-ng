@@ -35,7 +35,7 @@ jobs:
       matrix:
         kubernetes-version:
           - "1.27.3"
-          - "1.28"
+          - "1.28.0"
     steps:
       - name: "Checkout"
         uses: actions/checkout@v3
@@ -51,40 +51,40 @@ jobs:
           registry: false
           node_image: kindest/node:v${{ matrix.kubernetes-version }}
           config: test/e2e/kind.yaml
-      - name: 'SetUp Kind Ingress'
-        run: |
-          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
-
-          kubectl wait \
-            --namespace=ingress-nginx \
-            --for=condition=ready \
-            pod \
-            --selector=app.kubernetes.io/component=controller \
-            --timeout=90s
-      - name: 'SetUp Cert Manager'
-        run: |
-          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-
-          kubectl wait \
-            --namespace=cert-manager \
-            --for=condition=ready \
-            pod \
-            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=cert-manager \
-            --timeout=90s
-          
-          kubectl wait \
-            --namespace=cert-manager \
-            --for=condition=ready \
-            pod \
-            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=cainjector \
-            --timeout=90s
-          
-          kubectl wait \
-            --namespace=cert-manager \
-            --for=condition=ready \
-            pod \
-            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=webhook \
-            --timeout=90s
+#      - name: 'SetUp Kind Ingress'
+#        run: |
+#          kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+#
+#          kubectl wait \
+#            --namespace=ingress-nginx \
+#            --for=condition=ready \
+#            pod \
+#            --selector=app.kubernetes.io/component=controller \
+#            --timeout=90s
+#      - name: 'SetUp Cert Manager'
+#        run: |
+#          kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
+#
+#          kubectl wait \
+#            --namespace=cert-manager \
+#            --for=condition=ready \
+#            pod \
+#            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=cert-manager \
+#            --timeout=90s
+#
+#          kubectl wait \
+#            --namespace=cert-manager \
+#            --for=condition=ready \
+#            pod \
+#            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=cainjector \
+#            --timeout=90s
+#
+#          kubectl wait \
+#            --namespace=cert-manager \
+#            --for=condition=ready \
+#            pod \
+#            --selector=app.kubernetes.io/instance=cert-manager,app.kubernetes.io/name=webhook \
+#            --timeout=90s
       - name: "SetUp Dapr Operator"
         run: |          
           make deploy/e2e
