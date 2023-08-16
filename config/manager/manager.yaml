@@ -13,7 +13,7 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dapr-controller
+  name: dapr-control-plane
   namespace: dapr-system
   labels:
     control-plane: dapr-control-plane
@@ -30,7 +30,7 @@ spec:
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: dapr-controller
+        kubectl.kubernetes.io/default-container: dapr-control-plane
       labels:
         control-plane: dapr-control-plane
     spec:
@@ -65,12 +65,12 @@ spec:
         #   type: RuntimeDefault
       containers:
       - command:
-        - /dapr-controller
+        - /dapr-control-plane
         args:
         - run
         - --leader-election=true
         image: controller:latest
-        name: dapr-controller
+        name: dapr-control-plane
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -97,5 +97,5 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      serviceAccountName: dapr-controller-sa
+      serviceAccountName: dapr-control-plane-sa
       terminationGracePeriodSeconds: 10

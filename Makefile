@@ -105,7 +105,7 @@ test/e2e: manifests generate fmt vet ## Run e2e tests.
 
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
-	go build -ldflags="$(GOLDFLAGS)" -o bin/dapr-controller cmd/main.go
+	go build -ldflags="$(GOLDFLAGS)" -o bin/dapr-control-plane cmd/main.go
 
 .PHONY: run
 run: ## Run a controller from your host.

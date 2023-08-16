@@ -62,8 +62,12 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 		}
 
 		if err := c.List(ctx, &items, options...); err != nil {
+			if k8serrors.IsForbidden(err) {
+				gc.l.Info("cannot gc, forbidden", "gvk", GVK.String())
+				continue
+			}
 			if !k8serrors.IsNotFound(err) {
-				return errors.Wrap(err, "cannot list child resources")
+				return errors.Wrapf(err, "cannot list child resources %s", GVK.String())
 			}
 			continue
 		}
@@ -71,7 +75,7 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 		for i := range items.Items {
 			resource := items.Items[i]
 
-			if !gc.canBeDeleted(ctx, resource) {
+			if !gc.canBeDeleted(ctx, resource.GroupVersionKind()) {
 				continue
 			}
 
@@ -99,7 +103,12 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 	return nil
 }
 
-func (gc *GC) canBeDeleted(_ context.Context, _ unstructured.Unstructured) bool {
+func (gc *GC) canBeDeleted(_ context.Context, gvk schema.GroupVersionKind) bool {
+	switch {
+	case gvk.Group == "coordination.k8s.io" && gvk.Kind == "Lease":
+		return false
+	}
+
 	return true
 }
 
@@ -161,7 +170,9 @@ func (gc *GC) computeDeletableTypes(ctx context.Context, ns string, c *client.Cl
 					for _, ruleResource := range rule.Resources {
 						if (resourceGroup == ruleGroup || ruleGroup == "*") && (res.APIResources[i].Name == ruleResource || ruleResource == "*") {
 							GVK := schema.FromAPIVersionAndKind(res.GroupVersion, res.APIResources[i].Kind)
-							GVKs[GVK] = struct{}{}
+							if gc.canBeDeleted(ctx, GVK) {
+								GVKs[GVK] = struct{}{}
+							}
 							break rule
 						}
 					}
