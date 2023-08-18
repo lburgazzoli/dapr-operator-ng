@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-    categories: Developer Tools, Integration & Delivery
+    categories: Dapr
     certified: "false"
     containerImage: ""
   name: dapr-operator-ng.v0.0.0

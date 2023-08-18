@@ -30,6 +30,7 @@ LINTER ?= $(LOCALBIN)/golangci-lint
 GOIMPORT ?= $(LOCALBIN)/goimports
 YQ ?= $(LOCALBIN)/yq
 KIND ?= $(LOCALBIN)/kind
+OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -192,21 +193,9 @@ deploy/kind: manifests kustomize kind ## Deploy controller to the K8s cluster sp
 
 
 .PHONY: build/bundle
-build/bundle: kustomize operator-sdk yq
-	rm -rf $(PROJECT_PATH)/bundles
-	mkdir -p $(PROJECT_PATH)/bundles
-	cd  $(PROJECT_PATH)/bundles
-
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle \
-	  --package dapr-operator-ng \
-	  --version 0.0.1 \
-	  --channels "alpha" \
-	  --default-channel "alpha"
-
-	$(YQ) -i \
-		'.metadata.annotations.containerImage = .spec.install.spec.deployments[0].spec.template.spec.containers[0].image' \
-		bundle/manifests/dapr-operator-ng.clusterserviceversion.yaml
-	$(OPERATOR_SDK) bundle validate ./bundle
+build/bundle: generate manifests kustomize operator-sdk yq
+	@echo "Generating bundle"
+	$(PROJECT_PATH)/hack/scripts/gen_bundle.sh $(PROJECT_PATH) "dapr-operator-ng" "0.0.1"
 
 ##@ Build Dependencies
 
@@ -226,16 +215,13 @@ CONTROLLER_TOOLS_VERSION ?= v0.12.0
 .PHONY: kustomize
 kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary. If wrong version is installed, it will be removed before downloading.
 $(KUSTOMIZE): $(LOCALBIN)
-	@if test -x $(LOCALBIN)/kustomize && ! $(LOCALBIN)/kustomize version | grep -q $(KUSTOMIZE_VERSION); then \
-		echo "$(LOCALBIN)/kustomize version is not expected $(KUSTOMIZE_VERSION). Removing it before installing."; \
-		rm -rf $(LOCALBIN)/kustomize; \
-	fi
-	test -s $(LOCALBIN)/kustomize || GOBIN=$(LOCALBIN) GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@$(KUSTOMIZE_VERSION)
+	test -s $(LOCALBIN)/kustomize || \
+	GOBIN=$(LOCALBIN) GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@$(KUSTOMIZE_VERSION)
 
 .PHONY: controller-gen
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary. If wrong version is installed, it will be overwritten.
 $(CONTROLLER_GEN): $(LOCALBIN)
-	test -s $(LOCALBIN)/controller-gen && $(LOCALBIN)/controller-gen --version | grep -q $(CONTROLLER_TOOLS_VERSION) || \
+	test -s $(LOCALBIN)/controller-gen || \
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 
@@ -271,6 +257,7 @@ codegen-tools-install: $(LOCALBIN)
 	$(PROJECT_PATH)/hack/scripts/install_gen_tools.sh $(PROJECT_PATH) $(CODEGEN_VERSION) $(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: operator-sdk
-operator-sdk: $(LOCALBIN)
+operator-sdk: $(OPERATOR_SDK)
+$(OPERATOR_SDK): $(LOCALBIN)
 	@echo "Installing operator-sdk"
 	$(PROJECT_PATH)/hack/scripts/install_operator_sdk.sh $(PROJECT_PATH) $(OPERATOR_SDK_VERSION)

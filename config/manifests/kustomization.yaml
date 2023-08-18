@@ -2,6 +2,6 @@
 # used to generate the 'manifests/' directory in a bundle.
 resources:
 - bases/dapr-operator-ng.clusterserviceversion.yaml
-- ../crd
-- ../rbac
-- ../manager
+- ../default
+- ../samples
+- ../scorecard
