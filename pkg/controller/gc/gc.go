@@ -37,19 +37,22 @@ type GC struct {
 	collectableGVKs map[schema.GroupVersionKind]struct{}
 }
 
-func (gc *GC) Run(ctx context.Context, ns string, c *client.Client, selector labels.Selector) error {
+func (gc *GC) Run(ctx context.Context, ns string, c *client.Client, selector labels.Selector) (int, error) {
 	gc.lock.Lock()
 	defer gc.lock.Unlock()
 
 	err := gc.computeDeletableTypes(ctx, ns, c)
 	if err != nil {
-		return errors.Wrap(err, "cannot discover GVK types")
+		return 0, errors.Wrap(err, "cannot discover GVK types")
 	}
 
 	return gc.deleteEachOf(ctx, c, selector)
 }
 
-func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector labels.Selector) error {
+func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector labels.Selector) (int, error) {
+
+	deleted := 0
+
 	for GVK := range gc.collectableGVKs {
 		items := unstructured.UnstructuredList{
 			Object: map[string]interface{}{
@@ -67,7 +70,7 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 				continue
 			}
 			if !k8serrors.IsNotFound(err) {
-				return errors.Wrapf(err, "cannot list child resources %s", GVK.String())
+				return 0, errors.Wrapf(err, "cannot list child resources %s", GVK.String())
 			}
 			continue
 		}
@@ -88,7 +91,7 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 					continue
 				}
 
-				return errors.Wrapf(
+				return 0, errors.Wrapf(
 					err,
 					"cannot delete resources gvk:%s, namespace: %s, name: %s",
 					resource.GroupVersionKind().String(),
@@ -97,10 +100,12 @@ func (gc *GC) deleteEachOf(ctx context.Context, c *client.Client, selector label
 			}
 
 			gc.l.Info("deleted", "ref", resources.Ref(&resource))
+
+			deleted++
 		}
 	}
 
-	return nil
+	return deleted, nil
 }
 
 func (gc *GC) canBeDeleted(_ context.Context, gvk schema.GroupVersionKind) bool {

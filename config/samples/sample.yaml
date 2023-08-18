@@ -1,7 +1,7 @@
 apiVersion: operator.dapr.io/v1alpha1
 kind: DaprControlPlane
 metadata:
-  name: "dapr"
+  name: "dapr-control-plane"
   namespace: "dapr-system"
 spec:
   values: {}

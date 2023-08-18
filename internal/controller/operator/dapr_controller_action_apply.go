@@ -7,10 +7,6 @@ import (
 	"strconv"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/gc"
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/transformers"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-
 	corev1 "k8s.io/api/core/v1"
 
 	daprApi "github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
@@ -18,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/resources"
 
@@ -93,9 +88,9 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		}
 
 		resources.Labels(&obj, map[string]string{
-			controller.DaprReleaseGeneration: strconv.FormatInt(rc.Resource.Generation, 10),
-			controller.DaprReleaseName:       rc.Resource.Name,
-			controller.DaprReleaseNamespace:  rc.Resource.Namespace,
+			DaprReleaseGeneration: strconv.FormatInt(rc.Resource.Generation, 10),
+			DaprReleaseName:       rc.Resource.Name,
+			DaprReleaseNamespace:  rc.Resource.Namespace,
 		})
 
 		switch dc.(type) {
@@ -141,7 +136,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 			if _, ok := a.subscriptions[r]; !ok {
 				err = rc.Reconciler.WatchDependant(
 					&obj,
-					rc.Reconciler.EnqueueRequestsFromMapFunc(transformers.LabelsToRequest),
+					rc.Reconciler.EnqueueRequestsFromMapFunc(labelsToRequest),
 					a.watchForUpdates(gvk),
 					true,
 				)
@@ -189,7 +184,7 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 		}
 
 		_, err = dc.Apply(ctx, obj.GetName(), &obj, metav1.ApplyOptions{
-			FieldManager: controller.FieldManager,
+			FieldManager: DaprFieldManager,
 			Force:        true,
 		})
 
@@ -214,17 +209,17 @@ func (a *ApplyAction) Run(ctx context.Context, rc *ReconciliationRequest) error 
 	// - daprs.tools.dapr.io/release.generation
 	//
 	if reinstall {
-		s, err := a.selector(rc)
-
+		s, err := gcSelector(rc)
 		if err != nil {
 			return errors.Wrap(err, "cannot compute gc selector")
 		}
 
-		a.l.Info("run gc")
-		err = a.gc.Run(ctx, rc.Resource.Namespace, rc.Client, s)
+		deleted, err := a.gc.Run(ctx, rc.Resource.Namespace, rc.Client, s)
 		if err != nil {
 			return errors.Wrap(err, "cannot run gc")
 		}
+
+		a.l.Info("gc", "deleted", deleted)
 	}
 
 	return nil
@@ -281,41 +276,4 @@ func (a *ApplyAction) installOnly(gvk schema.GroupVersionKind) bool {
 	}
 
 	return false
-}
-
-func (a *ApplyAction) selector(rc *ReconciliationRequest) (labels.Selector, error) {
-
-	namespace, err := labels.NewRequirement(
-		controller.DaprReleaseNamespace,
-		selection.Equals,
-		[]string{rc.Resource.Namespace})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot determine release namespace requirement")
-	}
-
-	name, err := labels.NewRequirement(
-		controller.DaprReleaseName,
-		selection.Equals,
-		[]string{rc.Resource.Name})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot determine release name requirement")
-	}
-
-	generation, err := labels.NewRequirement(
-		controller.DaprReleaseGeneration,
-		selection.LessThan,
-		[]string{strconv.FormatInt(rc.Resource.Generation, 10)})
-
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot determine generation requirement")
-	}
-
-	selector := labels.NewSelector().
-		Add(*namespace).
-		Add(*name).
-		Add(*generation)
-
-	return selector, nil
 }

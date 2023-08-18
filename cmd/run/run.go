@@ -39,12 +39,12 @@ func NewRunCmd() *cobra.Command {
 		Short: "run",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return controller.Start(controllerOpts, func(manager manager.Manager, opts controller.Options) error {
-				rec, err := daprCtl.NewReconciler(manager, helmOpts)
+				_, err := daprCtl.NewReconciler(cmd.Context(), manager, helmOpts)
 				if err != nil {
 					return err
 				}
 
-				return rec.SetupWithManager(cmd.Context(), manager)
+				return err
 			})
 		},
 	}
@@ -58,7 +58,6 @@ func NewRunCmd() *cobra.Command {
 	cmd.Flags().StringVar(&controllerOpts.ProbeAddr, "health-probe-bind-address", controllerOpts.ProbeAddr, "The address the probe endpoint binds to.")
 	cmd.Flags().StringVar(&controllerOpts.PprofAddr, "pprof-bind-address", controllerOpts.PprofAddr, "The address the pprof endpoint binds to.")
 
-	// TODO: support for remote repos
 	cmd.Flags().StringVar(&helmOpts.ChartsDir, "helm-charts-dir", helmOpts.ChartsDir, "Helm charts dir.")
 
 	return &cmd

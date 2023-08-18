@@ -12,8 +12,21 @@ import (
 )
 
 const (
-	// HelmChartsDir is the relative directory.
+	DaprReleaseGeneration = "controlplane.operator.dapr.io/release.generation"
+	DaprReleaseName       = "controlplane.operator.dapr.io/release.name"
+	DaprReleaseNamespace  = "controlplane.operator.dapr.io/release.namespace"
+
+	DaprFinalizerName = "controlplane.operator.dapr.io/finalizer"
+	DaprFieldManager  = "dapr-controlplane"
+
 	HelmChartsDir = "helm-charts/dapr"
+
+	DaprControlPlaneName      = "dapr-control-plane"
+	DaprControlPlaneNamespace = "dapr-system"
+
+	DaprConditionReconcile = "Reconcile"
+	DaprPhaseError         = "Error"
+	DaprPhaseReady         = "Ready"
 )
 
 type HelmOptions struct {

@@ -43,7 +43,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/controller"
 )
 
-func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
+func NewReconciler(ctx context.Context, manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	c, err := client.NewClient(manager.GetConfig(), manager.GetScheme(), manager.GetClient())
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	rec.Scheme = manager.GetScheme()
 	rec.ClusterType = controller.ClusterTypeVanilla
 	rec.manager = manager
-	rec.recorder = manager.GetEventRecorderFor(controller.FieldManager)
+	rec.recorder = manager.GetEventRecorderFor(DaprFieldManager)
 
 	isOpenshift, err := c.IsOpenShift()
 	if err != nil {
@@ -75,6 +75,11 @@ func NewReconciler(manager ctrlRt.Manager, o HelmOptions) (*Reconciler, error) {
 	rec.c = hc
 	if rec.c.Values == nil {
 		rec.c.Values = make(map[string]interface{})
+	}
+
+	err = rec.init(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return &rec, nil
@@ -121,8 +126,8 @@ type Reconciler struct {
 	recorder    record.EventRecorder
 }
 
-func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlRt.Manager) error {
-	c := ctrlRt.NewControllerManagedBy(mgr)
+func (r *Reconciler) init(ctx context.Context) error {
+	c := ctrlRt.NewControllerManagedBy(r.manager)
 
 	// TODO: as today, the controller can handle multiple Dapr CR however, the Dapr operator does
 	//       not seem to be designed to handle multiple installations on the same cluster hence

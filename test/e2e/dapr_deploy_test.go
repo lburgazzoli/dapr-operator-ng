@@ -1,13 +1,14 @@
 package e2e
 
 import (
+	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
+	"github.com/rs/xid"
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
-	"github.com/rs/xid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/lburgazzoli/dapr-operator-ng/test/support"
@@ -18,19 +19,17 @@ import (
 
 func TestDaprDeploy(t *testing.T) {
 	test := With(t)
-	test.T().Parallel()
 
-	ns := test.NewTestNamespace()
-	dp := test.Client().Dapr.OperatorV1alpha1().DaprControlPlanes(ns.Name)
+	cp := test.Client().DaprCP
 
-	instance, err := dp.Apply(
+	instance, err := cp.Apply(
 		test.Ctx(),
-		daprAc.DaprControlPlane(xid.New().String(), ns.Name).
+		daprAc.DaprControlPlane(daprCP.DaprControlPlaneName, daprCP.DaprControlPlaneNamespace).
 			WithSpec(daprAc.DaprControlPlaneSpec().
 				WithValues(nil),
 			),
 		metav1.ApplyOptions{
-			FieldManager: "dapr-test",
+			FieldManager: "dapr-e2e-" + t.Name(),
 		})
 
 	test.Expect(err).
@@ -38,7 +37,7 @@ func TestDaprDeploy(t *testing.T) {
 
 	test.T().Cleanup(func() {
 		test.Expect(
-			dp.Delete(test.Ctx(), instance.Name, metav1.DeleteOptions{
+			cp.Delete(test.Ctx(), instance.Name, metav1.DeleteOptions{
 				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
 			}),
 		).ToNot(HaveOccurred())
@@ -50,5 +49,36 @@ func TestDaprDeploy(t *testing.T) {
 		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
 	test.Eventually(Deployment(test, instance, "dapr-sidecar-injector"), TestTimeoutLong).Should(
 		WithTransform(ConditionStatus(appsv1.DeploymentAvailable), Equal(corev1.ConditionTrue)))
+
+}
+
+func TestDaprDeployWrongCR(t *testing.T) {
+	test := With(t)
+
+	cp := test.Client().DaprCP
+
+	instance, err := cp.Apply(
+		test.Ctx(),
+		daprAc.DaprControlPlane(xid.New().String(), daprCP.DaprControlPlaneNamespace).
+			WithSpec(daprAc.DaprControlPlaneSpec().
+				WithValues(nil),
+			),
+		metav1.ApplyOptions{
+			FieldManager: "dapr-e2e-" + t.Name(),
+		})
+
+	test.Expect(err).
+		ToNot(HaveOccurred())
+
+	test.T().Cleanup(func() {
+		test.Expect(
+			cp.Delete(test.Ctx(), instance.Name, metav1.DeleteOptions{
+				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
+			}),
+		).ToNot(HaveOccurred())
+	})
+
+	test.Eventually(ControlPlane(test, instance), TestTimeoutLong).Should(
+		WithTransform(ConditionStatus(daprCP.DaprConditionReconcile), Equal(corev1.ConditionFalse)))
 
 }

@@ -18,9 +18,8 @@ package operator
 
 import (
 	"context"
+	"fmt"
 	"sort"
-
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller"
 
 	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
 	"github.com/pkg/errors"
@@ -61,9 +60,31 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	err := r.Get(ctx, req.NamespacedName, rr.Resource)
 	if err != nil {
 		if k8serrors.IsNotFound(err) {
-			// no CR found
+			// no CR found anymore, maybe deleted
 			return ctrl.Result{}, nil
 		}
+	}
+
+	if req.Name != DaprControlPlaneName || req.Namespace != DaprControlPlaneNamespace {
+		rr.Resource.Status.Phase = DaprPhaseError
+		rr.Resource.Status.Conditions = append(rr.Resource.Status.Conditions, metav1.Condition{
+			Type:   DaprConditionReconcile,
+			Status: metav1.ConditionFalse,
+			Reason: "UnsupportedConfiguration",
+			Message: fmt.Sprintf(
+				"Unsupported resource, the operator handles a single resource named %s in namespace %s",
+				DaprControlPlaneName,
+				DaprControlPlaneNamespace),
+		})
+
+		err = r.Status().Update(ctx, rr.Resource)
+
+		if err != nil && k8serrors.IsConflict(err) {
+			l.Info(err.Error())
+			return ctrl.Result{Requeue: true}, nil
+		}
+
+		return ctrl.Result{}, err
 	}
 
 	if rr.Resource.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -72,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Add finalizer
 		//
 
-		if ctrlutil.AddFinalizer(rr.Resource, controller.FinalizerName) {
+		if ctrlutil.AddFinalizer(rr.Resource, DaprFinalizerName) {
 			if err := r.Update(ctx, rr.Resource); err != nil {
 				if k8serrors.IsConflict(err) {
 					return ctrl.Result{}, err
@@ -97,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		// Handle finalizer
 		//
 
-		if ctrlutil.RemoveFinalizer(rr.Resource, controller.FinalizerName) {
+		if ctrlutil.RemoveFinalizer(rr.Resource, DaprFinalizerName) {
 			if err := r.Update(ctx, rr.Resource); err != nil {
 				if k8serrors.IsConflict(err) {
 					return ctrl.Result{}, err
@@ -115,7 +136,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	//
 
 	reconcileCondition := metav1.Condition{
-		Type:               "Reconcile",
+		Type:               DaprConditionReconcile,
 		Status:             metav1.ConditionTrue,
 		Reason:             "Reconciled",
 		Message:            "Reconciled",
@@ -135,10 +156,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		reconcileCondition.Reason = "Failure"
 		reconcileCondition.Message = "Failure"
 
-		rr.Resource.Status.Phase = "Error"
+		rr.Resource.Status.Phase = DaprPhaseError
 	} else {
 		rr.Resource.Status.ObservedGeneration = rr.Resource.Generation
-		rr.Resource.Status.Phase = "Ready"
+		rr.Resource.Status.Phase = DaprPhaseReady
 	}
 
 	meta.SetStatusCondition(&rr.Resource.Status.Conditions, reconcileCondition)

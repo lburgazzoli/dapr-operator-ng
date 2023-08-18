@@ -2,6 +2,7 @@ package support
 
 import (
 	"context"
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned/typed/operator/v1alpha1"
 	"sync"
 	"testing"
 
@@ -16,6 +17,7 @@ type Test interface {
 	Client() *Client
 
 	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
+	DaprControlPlanes() v1alpha1.DaprControlPlaneInterface
 
 	gomega.Gomega
 }

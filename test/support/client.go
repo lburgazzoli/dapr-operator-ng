@@ -2,6 +2,8 @@ package support
 
 import (
 	"errors"
+	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
+	daprAC "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned/typed/operator/v1alpha1"
 	"os"
 	"path/filepath"
 
@@ -18,6 +20,7 @@ type Client struct {
 	kubernetes.Interface
 
 	Dapr      daprClient.Interface
+	DaprCP    daprAC.DaprControlPlaneInterface
 	Discovery discovery.DiscoveryInterface
 
 	//nolint:unused
@@ -61,6 +64,7 @@ func newClient() (*Client, error) {
 		Interface: kubeClient,
 		Discovery: discoveryClient,
 		Dapr:      dClient,
+		DaprCP:    dClient.OperatorV1alpha1().DaprControlPlanes(daprCP.DaprControlPlaneNamespace),
 		config:    cfg,
 	}
 

@@ -1,6 +1,7 @@
 package support
 
 import (
+	"github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/conditions"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -22,6 +23,14 @@ func ConditionStatus[T conditionType](conditionType T) func(any) corev1.Conditio
 				for i := range o.Status.Conditions {
 					if string(o.Status.Conditions[i].Type) == string(conditionType) {
 						return o.Status.Conditions[i].Status
+					}
+				}
+			}
+		case *v1alpha1.DaprControlPlane:
+			if o != nil {
+				for i := range o.Status.Conditions {
+					if o.Status.Conditions[i].Type == string(conditionType) {
+						return corev1.ConditionStatus(o.Status.Conditions[i].Status)
 					}
 				}
 			}

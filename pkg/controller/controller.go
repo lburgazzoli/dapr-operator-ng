@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"github.com/pkg/errors"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"time"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/logger"
@@ -44,23 +44,20 @@ func Start(options Options, setup func(manager.Manager, Options) error) error {
 		LeaderElectionReleaseOnCancel: options.ReleaseLeaderElectionOnCancel,
 		LeaderElectionNamespace:       options.LeaderElectionNamespace,
 	})
+
 	if err != nil {
-		Log.Error(err, "unable to create manager")
-		os.Exit(1)
+		return errors.Wrap(err, "unable to create manager")
 	}
 
 	if err := setup(mgr, options); err != nil {
-		Log.Error(err, "unable to set up controllers")
-		return err
+		return errors.Wrap(err, "unable to set up controllers")
 	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
-		Log.Error(err, "unable to set up health check")
-		return err
+		return errors.Wrap(err, "unable to set up health check")
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
-		Log.Error(err, "unable to set up ready check")
-		return err
+		return errors.Wrap(err, "unable to set up readiness check")
 	}
 
 	if options.PprofAddr != "" {
@@ -89,8 +86,7 @@ func Start(options Options, setup func(manager.Manager, Options) error) error {
 	Log.Info("starting manager")
 
 	if err := mgr.Start(ctx); err != nil {
-		Log.Error(err, "problem running manager")
-		return err
+		return errors.Wrap(err, "problem running manager")
 	}
 
 	return nil
