@@ -39,3 +39,32 @@ func ConditionStatus[T conditionType](conditionType T) func(any) corev1.Conditio
 		return corev1.ConditionUnknown
 	}
 }
+
+func ConditionReason[T conditionType](conditionType T) func(any) string {
+	return func(object any) string {
+		switch o := object.(type) {
+		case conditions.Getter:
+			if c := conditions.Get(o, conditions.ConditionType(conditionType)); c != nil {
+				return c.Reason
+			}
+		case *appsv1.Deployment:
+			if o != nil {
+				for i := range o.Status.Conditions {
+					if string(o.Status.Conditions[i].Type) == string(conditionType) {
+						return o.Status.Conditions[i].Reason
+					}
+				}
+			}
+		case *v1alpha1.DaprControlPlane:
+			if o != nil {
+				for i := range o.Status.Conditions {
+					if o.Status.Conditions[i].Type == string(conditionType) {
+						return o.Status.Conditions[i].Reason
+					}
+				}
+			}
+		}
+
+		return ""
+	}
+}

@@ -5,6 +5,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
+	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
+	daprAc "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/applyconfiguration/operator/v1alpha1"
+	"github.com/lburgazzoli/dapr-operator-ng/pkg/pointer"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/onsi/gomega"
@@ -16,6 +23,8 @@ type Test interface {
 	Client() *Client
 
 	NewTestNamespace(...Option[*corev1.Namespace]) *corev1.Namespace
+	NewDaprControlPlane(spec *daprAc.DaprControlPlaneSpecApplyConfiguration) *v1alpha1.DaprControlPlane
+	NewNamespacedNameDaprControlPlane(types.NamespacedName, *daprAc.DaprControlPlaneSpecApplyConfiguration) *v1alpha1.DaprControlPlane
 
 	gomega.Gomega
 }
@@ -89,4 +98,67 @@ func (t *T) NewTestNamespace(options ...Option[*corev1.Namespace]) *corev1.Names
 	})
 
 	return namespace
+}
+
+func (t *T) NewDaprControlPlane(
+	spec *daprAc.DaprControlPlaneSpecApplyConfiguration,
+) *v1alpha1.DaprControlPlane {
+
+	cp := t.Client().DaprCP
+
+	instance, err := cp.Apply(
+		t.Ctx(),
+		daprAc.DaprControlPlane(daprCP.DaprControlPlaneName, daprCP.DaprControlPlaneNamespace).
+			WithSpec(spec),
+		metav1.ApplyOptions{
+			FieldManager: "dapr-e2e-" + t.T().Name(),
+		})
+
+	t.Expect(err).
+		ToNot(gomega.HaveOccurred())
+
+	t.T().Cleanup(func() {
+		t.Expect(
+			cp.Delete(t.Ctx(), instance.Name, metav1.DeleteOptions{
+				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
+			}),
+		).ToNot(gomega.HaveOccurred())
+	})
+
+	return t.NewNamespacedNameDaprControlPlane(
+		types.NamespacedName{
+			Name:      daprCP.DaprControlPlaneName,
+			Namespace: daprCP.DaprControlPlaneNamespace,
+		},
+		spec,
+	)
+}
+
+func (t *T) NewNamespacedNameDaprControlPlane(
+	nn types.NamespacedName,
+	spec *daprAc.DaprControlPlaneSpecApplyConfiguration,
+) *v1alpha1.DaprControlPlane {
+
+	cp := t.Client().DaprCP
+
+	instance, err := cp.Apply(
+		t.Ctx(),
+		daprAc.DaprControlPlane(nn.Name, nn.Namespace).
+			WithSpec(spec),
+		metav1.ApplyOptions{
+			FieldManager: "dapr-e2e-" + t.T().Name(),
+		})
+
+	t.Expect(err).
+		ToNot(gomega.HaveOccurred())
+
+	t.T().Cleanup(func() {
+		t.Expect(
+			cp.Delete(t.Ctx(), instance.Name, metav1.DeleteOptions{
+				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
+			}),
+		).ToNot(gomega.HaveOccurred())
+	})
+
+	return instance
 }
