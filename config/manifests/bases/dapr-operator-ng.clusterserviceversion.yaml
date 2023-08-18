@@ -1,0 +1,52 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: '[]'
+    capabilities: Basic Install
+    categories: Developer Tools, Integration & Delivery
+    certified: "false"
+    containerImage: ""
+  name: dapr-operator-ng.v0.0.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: DaprControlPlane is the Schema for the Dapr ControlPlane API.
+      displayName: DaprControlPlane
+      kind: DaprControlPlane
+      name: daprcontrolplanes.operator.dapr.io
+      version: v1alpha1
+  description:  Dapr Control Plane Operator
+  displayName: Dapr Control Plane Operator
+  icon:
+  - base64data: ""
+    mediatype: image/png
+  install:
+    spec:
+      deployments: null
+    strategy: ""
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - dapr
+  links:
+  - name: Dapr
+    url: https://dapr.io
+  maintainers:
+  - email: info@dapr.io
+    name: dapr
+  maturity: alpha
+  minKubeVersion: 1.22.0
+  provider:
+    name: dapr.io
+    url: https://dapr.io
+  version: 0.0.0

@@ -21,6 +21,7 @@ KUSTOMIZE_VERSION ?= v5.0.1
 CONTROLLER_TOOLS_VERSION ?= v0.12.1
 KIND_VERSION ?= v0.20.0
 LINTER_VERSION ?= v1.52.2
+OPERATOR_SDK_VERSION ?= v1.31.0
 
 ## Tool Binaries
 KUBECTL ?= kubectl
@@ -189,6 +190,24 @@ deploy/kind: manifests kustomize kind ## Deploy controller to the K8s cluster sp
 	kind load docker-image ${IMG}
 	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
+
+.PHONY: build/bundle
+build/bundle: kustomize operator-sdk yq
+	rm -rf $(PROJECT_PATH)/bundles
+	mkdir -p $(PROJECT_PATH)/bundles
+	cd  $(PROJECT_PATH)/bundles
+
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle \
+	  --package dapr-operator-ng \
+	  --version 0.0.1 \
+	  --channels "alpha" \
+	  --default-channel "alpha"
+
+	$(YQ) -i \
+		'.metadata.annotations.containerImage = .spec.install.spec.deployments[0].spec.template.spec.containers[0].image' \
+		bundle/manifests/dapr-operator-ng.clusterserviceversion.yaml
+	$(OPERATOR_SDK) bundle validate ./bundle
+
 ##@ Build Dependencies
 
 ## Location to install dependencies to
@@ -248,8 +267,10 @@ $(KIND): $(LOCALBIN)
 
 .PHONY: codegen-tools-install
 codegen-tools-install: $(LOCALBIN)
-	@# We must force the installation to make sure we are using the correct version
-	@# Note: as there is no --version in the tools, we cannot rely on cached local versions
 	@echo "Installing code gen tools"
-
 	$(PROJECT_PATH)/hack/scripts/install_gen_tools.sh $(PROJECT_PATH) $(CODEGEN_VERSION) $(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: operator-sdk
+operator-sdk: $(LOCALBIN)
+	@echo "Installing operator-sdk"
+	$(PROJECT_PATH)/hack/scripts/install_operator_sdk.sh $(PROJECT_PATH) $(OPERATOR_SDK_VERSION)
