@@ -28,6 +28,7 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 LINTER ?= $(LOCALBIN)/golangci-lint
 GOIMPORT ?= $(LOCALBIN)/goimports
 YQ ?= $(LOCALBIN)/yq
+KIND ?= $(LOCALBIN)/kind
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -171,17 +172,22 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/standalone | kubectl apply -f -
+	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
-	$(KUSTOMIZE) build config/standalone | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUSTOMIZE) build config/deploy/standalone | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 
 .PHONY: deploy/e2e
 deploy/e2e: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	$(KUSTOMIZE) build config/e2e | kubectl apply -f -
+	$(KUSTOMIZE) build config/deploy/e2e | kubectl apply -f -
+.PHONY: deploy/kind
+deploy/kind: manifests kustomize kind ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	kind load docker-image ${IMG}
+	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
 ##@ Build Dependencies
 
@@ -237,7 +243,7 @@ $(YQ): $(LOCALBIN)
 kind: $(KIND)
 $(KIND): $(LOCALBIN)
 	@test -s $(LOCALBIN)/kind || \
-	GOBIN=$(LOCALBIN) go install go install sigs.k8s.io/kind@$(KIND_VERSION)
+	GOBIN=$(LOCALBIN) go install sigs.k8s.io/kind@$(KIND_VERSION)
 
 
 .PHONY: codegen-tools-install

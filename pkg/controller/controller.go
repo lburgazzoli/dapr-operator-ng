@@ -1,10 +1,11 @@
 package controller
 
 import (
-	"github.com/pkg/errors"
 	"net/http"
 	"net/http/pprof"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/lburgazzoli/dapr-operator-ng/pkg/logger"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

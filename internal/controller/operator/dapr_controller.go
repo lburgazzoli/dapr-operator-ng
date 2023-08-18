@@ -19,7 +19,6 @@ package operator
 import (
 	"context"
 
-	"github.com/lburgazzoli/dapr-operator-ng/pkg/controller/predicates"
 	"k8s.io/client-go/tools/record"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -163,14 +162,6 @@ func (r *Reconciler) Watch(obj ctrlCli.Object, eh handler.EventHandler, predicat
 		source.Kind(r.manager.GetCache(), obj),
 		eh,
 		predicates...)
-}
-
-func (r *Reconciler) WatchDependant(obj ctrlCli.Object, eh handler.EventHandler, watchUpdates bool, watchDelete bool) error {
-	return r.Watch(
-		obj,
-		eh,
-		predicates.DependantWithLabels(watchUpdates, watchDelete),
-	)
 }
 
 func (r *Reconciler) EnqueueRequestForOwner(owner ctrlCli.Object, opts ...handler.OwnerOption) handler.EventHandler {

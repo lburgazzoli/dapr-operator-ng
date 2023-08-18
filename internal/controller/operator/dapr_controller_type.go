@@ -24,9 +24,10 @@ const (
 	DaprControlPlaneName      = "dapr-control-plane"
 	DaprControlPlaneNamespace = "dapr-system"
 
-	DaprConditionReconcile = "Reconcile"
-	DaprPhaseError         = "Error"
-	DaprPhaseReady         = "Ready"
+	DaprConditionReconcile                      = "Reconcile"
+	DaprPhaseError                              = "Error"
+	DaprPhaseReady                              = "Ready"
+	DaprConditionReasonUnsupportedConfiguration = "UnsupportedConfiguration"
 )
 
 type HelmOptions struct {

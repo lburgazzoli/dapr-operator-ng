@@ -67,10 +67,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	if req.Name != DaprControlPlaneName || req.Namespace != DaprControlPlaneNamespace {
 		rr.Resource.Status.Phase = DaprPhaseError
-		rr.Resource.Status.Conditions = append(rr.Resource.Status.Conditions, metav1.Condition{
+
+		meta.SetStatusCondition(&rr.Resource.Status.Conditions, metav1.Condition{
 			Type:   DaprConditionReconcile,
 			Status: metav1.ConditionFalse,
-			Reason: "UnsupportedConfiguration",
+			Reason: DaprConditionReasonUnsupportedConfiguration,
 			Message: fmt.Sprintf(
 				"Unsupported resource, the operator handles a single resource named %s in namespace %s",
 				DaprControlPlaneName,

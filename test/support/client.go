@@ -2,10 +2,11 @@ package support
 
 import (
 	"errors"
-	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
-	daprAC "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned/typed/operator/v1alpha1"
 	"os"
 	"path/filepath"
+
+	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
+	daprAC "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned/typed/operator/v1alpha1"
 
 	daprClient "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned"
 	"k8s.io/apimachinery/pkg/runtime"

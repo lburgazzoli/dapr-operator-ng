@@ -37,6 +37,8 @@ type DaprControlPlaneStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Phase",type=string,JSONPath=`.status.phase`,description="The phase"
+// +kubebuilder:printcolumn:name="Ready",type=string,JSONPath=`.status.conditions[?(@.type=="Reconcile")].status`,description="Ready"
+// +kubebuilder:printcolumn:name="Reason",type=string,JSONPath=`.status.conditions[?(@.type=="Reconcile")].reason`,description="Reason"
 // +kubebuilder:resource:path=daprcontrolplanes,scope=Namespaced,shortName=dcp,categories=dapr
 
 type DaprControlPlane struct {
