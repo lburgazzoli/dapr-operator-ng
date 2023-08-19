@@ -10,18 +10,23 @@ BUNDLE_VERSION="$3"
 
 rm -rf "${PROJECT_ROOT}/bundle/dapr-operator-ng"
 
+mkdir -p "${PROJECT_ROOT}/bundle"
 cd "${PROJECT_ROOT}/bundle" || exit
 
-echo "${TMP_DIR}"
-echo "${PROJECT_ROOT}"
+echo "Project root   : ${PROJECT_ROOT}"
+echo "Bundle Name    : ${BUNDLE_NAME}"
+echo "Bundle Version : ${BUNDLE_VERSION}"
+
 echo "Generate bundle"
 
 ${PROJECT_ROOT}/bin/kustomize build "${PROJECT_ROOT}/config/manifests" | ${PROJECT_ROOT}/bin/operator-sdk generate bundle \
-  --package ${BUNDLE_NAME} \
-  --version ${BUNDLE_VERSION} \
+  --use-image-digests \
+  --overwrite \
+  --package "${BUNDLE_NAME}" \
+  --version "${BUNDLE_VERSION}" \
   --channels "alpha" \
   --default-channel "alpha" \
-  --output-dir "${PROJECT_ROOT}/bundle/${BUNDLE_NAME}"
+  --output-dir "${BUNDLE_NAME}"
 
 echo "Patch bundle metadata"
 

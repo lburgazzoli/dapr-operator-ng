@@ -15,5 +15,5 @@ if [ ! -f "${PROJECT_ROOT}/bin/operator-sdk" ]; then
     "${PROJECT_ROOT}/bin/operator-sdk" \
     "https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_${OS}_${ARCH}"
 
-  chmod +x "${PROJECT_ROOT}/bin/operator-sdk"  ;\
+  chmod +x "${PROJECT_ROOT}/bin/operator-sdk"
 fi

@@ -136,3 +136,4 @@ config/**/*.gen.json
 *-installer*
 bundle/
 bundles/
+bundle_*/

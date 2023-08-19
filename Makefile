@@ -1,14 +1,24 @@
 
-IMAGE_TAG_BASE ?= quay.io/lburgazzoli/dapr-operator-ng
-IMG_VERSION ?= latest
-IMG ?= ${IMAGE_TAG_BASE}:${IMG_VERSION}
+PROJECT_NAME := dapr-operator-ng
+PROJECT_VERSION := 1.11.0
+
+CONTAINER_REGISTRY := quay.io
+CONTAINER_REGISTRY_ORG := lburgazzoli
+CONTAINER_IMAGE_VERSION ?= $(PROJECT_VERSION)
+CONTAINER_IMAGE ?= $(CONTAINER_REGISTRY)/$(CONTAINER_REGISTRY_ORG)/$(PROJECT_NAME):$(CONTAINER_IMAGE_VERSION)
+
+BUNDLE_VERSION := $(PROJECT_VERSION)
+BUNDLE_CONTAINER_IMAGE ?= $(CONTAINER_REGISTRY)/$(CONTAINER_REGISTRY_ORG)/$(PROJECT_NAME)-bundle:$(BUNDLE_VERSION)
+
+CATALOG_VERSION := latest
+CATALOG_CONTAINER_IMAGE ?= $(CONTAINER_REGISTRY)/$(CONTAINER_REGISTRY_ORG)/$(PROJECT_NAME)-catalog:$(CATALOG_VERSION)
 
 LINT_GOGC := 10
 LINT_DEADLINE := 10m
 
 MKFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 PROJECT_PATH := $(patsubst %/,%,$(dir $(MKFILE_PATH)))
-LOCALBIN ?= ${PROJECT_PATH}/bin
+LOCALBIN ?= $(PROJECT_PATH)/bin
 
 HELM_CHART_REPO ?= https://dapr.github.io/helm-charts
 HELM_CHART ?= dapr
@@ -22,6 +32,7 @@ CONTROLLER_TOOLS_VERSION ?= v0.12.1
 KIND_VERSION ?= v0.20.0
 LINTER_VERSION ?= v1.52.2
 OPERATOR_SDK_VERSION ?= v1.31.0
+OPM_VERSION ?= v1.28.0
 
 ## Tool Binaries
 KUBECTL ?= kubectl
@@ -31,6 +42,7 @@ GOIMPORT ?= $(LOCALBIN)/goimports
 YQ ?= $(LOCALBIN)/yq
 KIND ?= $(LOCALBIN)/kind
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
+OPM ?= $(LOCALBIN)/opm
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -147,15 +159,15 @@ check/lint/fix: golangci-lint
 
 .PHONY: docker/build
 docker/build: test ## Build docker image with the manager.
-	$(CONTAINER_TOOL) build -t ${IMG} .
+	$(CONTAINER_TOOL) build -t $(CONTAINER_IMAGE) .
 
 .PHONY: docker/push
 docker/push: ## Push docker image with the manager.
-	$(CONTAINER_TOOL) push ${IMG}
+	$(CONTAINER_TOOL) push $(CONTAINER_IMAGE)
 
 .PHONY: docker/push/kind
 docker/push/kind: docker/build ## Load docker image in kind.
-	kind load docker-image ${IMG}
+	kind load docker-image $(CONTAINER_IMAGE)
 
 ##@ Deployment
 
@@ -173,7 +185,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(CONTAINER_IMAGE)
 	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
 .PHONY: undeploy
@@ -183,19 +195,50 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: deploy/e2e
 deploy/e2e: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(CONTAINER_IMAGE)
 	$(KUSTOMIZE) build config/deploy/e2e | kubectl apply -f -
 .PHONY: deploy/kind
 deploy/kind: manifests kustomize kind ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
-	kind load docker-image ${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(CONTAINER_IMAGE)
+	kind load docker-image $(CONTAINER_IMAGE)
 	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
 
-.PHONY: build/bundle
-build/bundle: generate manifests kustomize operator-sdk yq
-	@echo "Generating bundle"
-	$(PROJECT_PATH)/hack/scripts/gen_bundle.sh $(PROJECT_PATH) "dapr-operator-ng" "0.0.1"
+.PHONY: bundle/info
+bundle/info:
+	@echo $(CONTAINER_IMAGE)
+	@echo $(BUNDLE_CONTAINER_IMAGE)
+
+.PHONY: bundle/generate_
+bundle/generate: generate manifests kustomize operator-sdk yq
+	cd config/manager && $(KUSTOMIZE) edit set image controller=$(CONTAINER_IMAGE)
+	$(PROJECT_PATH)/hack/scripts/gen_bundle.sh \
+		$(PROJECT_PATH) \
+		$(PROJECT_NAME) \
+		$(PROJECT_VERSION)
+
+.PHONY: bundle/build
+bundle/build: bundle/generate
+	$(CONTAINER_TOOL) build \
+		-t $(BUNDLE_CONTAINER_IMAGE) \
+		-f $(PROJECT_PATH)/bundle/bundle.Dockerfile \
+		$(PROJECT_PATH)/bundle
+
+.PHONY: bundle/push
+bundle/push:
+	$(CONTAINER_TOOL) push $(BUNDLE_CONTAINER_IMAGE)
+
+.PHONY: catalog/build
+catalog/build: opm
+	$(OPM) index add \
+		--container-tool $(CONTAINER_TOOL) \
+		--mode semver \
+		--tag $(CATALOG_CONTAINER_IMAGE) \
+		--bundles $(BUNDLE_CONTAINER_IMAGE)
+
+.PHONY: catalog/push
+catalog/push:
+	$(CONTAINER_TOOL) push $(CATALOG_CONTAINER_IMAGE)
 
 ##@ Build Dependencies
 
@@ -261,3 +304,10 @@ operator-sdk: $(OPERATOR_SDK)
 $(OPERATOR_SDK): $(LOCALBIN)
 	@echo "Installing operator-sdk"
 	$(PROJECT_PATH)/hack/scripts/install_operator_sdk.sh $(PROJECT_PATH) $(OPERATOR_SDK_VERSION)
+
+
+.PHONY: opm
+opm: $(OPM)
+$(OPM): $(LOCALBIN)
+	@echo "Installing opm"
+	$(PROJECT_PATH)/hack/scripts/install_opm.sh $(PROJECT_PATH) $(OPM_VERSION)
