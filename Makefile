@@ -218,7 +218,7 @@ bundle/generate: generate manifests kustomize operator-sdk yq
 		$(PROJECT_VERSION)
 
 .PHONY: bundle/build
-bundle/build: bundle/generate
+bundle/build:
 	$(CONTAINER_TOOL) build \
 		-t $(BUNDLE_CONTAINER_IMAGE) \
 		-f $(PROJECT_PATH)/bundle/bundle.Dockerfile \

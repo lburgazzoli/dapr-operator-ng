@@ -10,9 +10,6 @@ on:
       olm:
         required: true
         type: boolean
-      tag:
-        required: true
-        type: string
     secrets:
       registry:
         required: true
@@ -42,8 +39,9 @@ jobs:
           export INPUT_VERSION="${{ inputs.version }}"
           export C_VERSION="${INPUT_VERSION#v}"
 
-          echo "VERSION=${C_VERSION}" >> $GITHUB_ENV
-          echo "IMG_VERSION=${C_VERSION}" >> $GITHUB_ENV
+          echo "CONTAINER_IMAGE_VERSION=${C_VERSION}" >> $GITHUB_ENV
+          echo "BUNDLE_VERSION=${C_VERSION}" >> $GITHUB_ENV
+          echo "CATALOG_VERSION=latest" >> $GITHUB_ENV
       - name: "Build Container image"
         run: |
           make docker/build
@@ -51,8 +49,11 @@ jobs:
       - name: "Build OLM bundle"
         if: ${{ inputs.olm }}
         run: |
-          make bundle
+          make bundle/generate
           make bundle/build
           make bundle/push
+      - name: "Build OLM Catalog"
+        if: ${{ inputs.olm }}
+        run: |
           make catalog/build
           make catalog/push

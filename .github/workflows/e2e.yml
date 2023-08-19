@@ -19,10 +19,10 @@ jobs:
         id: "publish"
         run: |
           export UUID=$(uuidgen | tr "[:upper:]" "[:lower:]")
-          export IMG="ttl.sh/${UUID}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}:1h"
+          export CONTAINER_IMAGE="ttl.sh/${UUID}-${GITHUB_RUN_ID}-${GITHUB_RUN_NUMBER}:1h"
           
-          echo $IMG
-          echo "image=${IMG}" >> "$GITHUB_OUTPUT"
+          echo CONTAINER_IMAGE
+          echo "image=${CONTAINER_IMAGE}" >> "$GITHUB_OUTPUT"
           
           make docker/build docker/push
   e2e:
@@ -30,7 +30,7 @@ jobs:
     needs:
       - images
     env:
-      IMG: ${{needs.images.outputs.image}}
+      CONTAINER_IMAGE: ${{needs.images.outputs.image}}
     strategy:
       matrix:
         kubernetes-version:
