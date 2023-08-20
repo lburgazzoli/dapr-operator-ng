@@ -65,6 +65,11 @@ SHELL = /usr/bin/env bash -o pipefail
 .PHONY: all
 all: build
 
+
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
 ##@ General
 
 # The help target prints out all targets with their descriptions organized
@@ -80,7 +85,7 @@ all: build
 
 .PHONY: help
 help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-\/]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Dapr
 
@@ -171,10 +176,6 @@ docker/push/kind: docker/build ## Load docker image in kind.
 
 ##@ Deployment
 
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
-
 .PHONY: install
 install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
@@ -204,13 +205,15 @@ deploy/kind: manifests kustomize kind ## Deploy controller to the K8s cluster sp
 	$(KUSTOMIZE) build config/deploy/standalone | kubectl apply -f -
 
 
+##@ Bundles
+
 .PHONY: bundle/info
-bundle/info:
+bundle/info: ## Dump bundle info.
 	@echo $(CONTAINER_IMAGE)
 	@echo $(BUNDLE_CONTAINER_IMAGE)
 
 .PHONY: bundle/generate_
-bundle/generate: generate manifests kustomize operator-sdk yq
+bundle/generate: generate manifests kustomize operator-sdk yq ## Generate bundle.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(CONTAINER_IMAGE)
 	$(PROJECT_PATH)/hack/scripts/gen_bundle.sh \
 		$(PROJECT_PATH) \
@@ -218,18 +221,18 @@ bundle/generate: generate manifests kustomize operator-sdk yq
 		$(PROJECT_VERSION)
 
 .PHONY: bundle/build
-bundle/build:
+bundle/build: ## Build bundle image.
 	$(CONTAINER_TOOL) build \
 		-t $(BUNDLE_CONTAINER_IMAGE) \
 		-f $(PROJECT_PATH)/bundle/bundle.Dockerfile \
 		$(PROJECT_PATH)/bundle
 
 .PHONY: bundle/push
-bundle/push:
+bundle/push: ## Push bundle image.
 	$(CONTAINER_TOOL) push $(BUNDLE_CONTAINER_IMAGE)
 
 .PHONY: catalog/build
-catalog/build: opm
+catalog/build: opm ## Build catalog image.
 	$(OPM) index add \
 		--container-tool $(CONTAINER_TOOL) \
 		--mode semver \
@@ -237,8 +240,12 @@ catalog/build: opm
 		--bundles $(BUNDLE_CONTAINER_IMAGE)
 
 .PHONY: catalog/push
-catalog/push:
+catalog/push: ## Push catalog image.
 	$(CONTAINER_TOOL) push $(CATALOG_CONTAINER_IMAGE)
+
+.PHONY: olm/install
+olm/install: operator-sdk ## Install olm.
+	cd bin && $(OPERATOR_SDK) olm install
 
 ##@ Build Dependencies
 

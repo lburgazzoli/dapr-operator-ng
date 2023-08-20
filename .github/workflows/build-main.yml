@@ -17,9 +17,14 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     needs:
       - build
+  e2e-bundle:
+    uses: ./.github/workflows/e2e.yml
+    needs:
+      - build
   publish:
     needs:
       - e2e
+      - e2e-bundle
     uses: ./.github/workflows/publish.yml
     with:
       version: "${{ github.ref_name }}-${{ github.sha }}"
