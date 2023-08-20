@@ -18,7 +18,7 @@ jobs:
     needs:
       - build
   e2e-bundle:
-    uses: ./.github/workflows/e2e.yml
+    uses: ./.github/workflows/e2e-bundle.yml
     needs:
       - build
   publish:

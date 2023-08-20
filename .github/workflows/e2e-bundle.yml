@@ -1,4 +1,4 @@
-name: Build And Push
+name: "e2e - bundle"
 
 on:
   workflow_call:
@@ -43,7 +43,7 @@ jobs:
                     
           make catalog/build
           make catalog/push
-  e2e:
+  e2e-bundle:
     runs-on: ubuntu-latest
     needs:
       - images
