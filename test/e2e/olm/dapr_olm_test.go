@@ -1,11 +1,12 @@
 package operator
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"testing"
 	"time"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 
 	olmV1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmV1Alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
