@@ -88,3 +88,41 @@ jobs:
             pod \
             --selector=app=catalog-operator \
             --timeout=90s
+      - name: "SetUp DAPR Resources"
+        run: |
+          yq -i '.metadata.namespace = dapr-system' config/samples/olm/operator_group.yaml          
+          yq -i '.spec.image = strenv(CATALOG_CONTAINER_IMAGE)' config/samples/olm/catalog.yaml
+          yq -i '.metadata.namespace = dapr-system' config/samples/olm/catalog.yaml          
+          yq -i '.metadata.namespace = dapr-system' config/samples/olm/subscription.yaml
+          yq -i '.spec.sourceNamespace = dapr-system' config/samples/olm/subscription.yaml
+      - name: "Install DAPR OperatorGroup"
+        run: |
+          kubectl apply -f config/samples/olm/operator_group.yaml
+      - name: "Install DAPR Catalog"
+        run: |
+          kubectl apply -f config/samples/olm/catalog.yaml
+                    
+          kubectl wait \
+            --namespace=dapr-system \
+            --for=jsonpath='{.status.connectionState.lastObservedState}'=READY \
+            catalogsources.operators.coreos.com \
+            daprio-catalog \
+            --timeout=90s
+      - name: "Install DAPR Subscription"
+        run: |
+          kubectl apply -f config/samples/olm/subscription.yaml
+          
+          kubectl wait \
+            --namespace=dapr-system \
+           --for=condition=Installed \
+            installplans.operators.coreos.com \
+            --selector=operators.coreos.com/dapr-operator-ng.dapr-system  \
+            --timeout=90s
+          
+          kubectl wait \
+            --namespace=dapr-system \
+            --for=condition=ready \
+            pod \
+            --selector=control-plane=dapr-control-plane \
+            --timeout=90s
+          
