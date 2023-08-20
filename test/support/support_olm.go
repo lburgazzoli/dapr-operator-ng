@@ -32,3 +32,29 @@ func ExtractCatalogState() func(*olmV1Alpha1.CatalogSource) string {
 		return in.Status.GRPCConnectionState.LastObservedState
 	}
 }
+
+func Subscription(t Test, name string, namespace string) func(g gomega.Gomega) (*olmV1Alpha1.Subscription, error) {
+	return func(g gomega.Gomega) (*olmV1Alpha1.Subscription, error) {
+		answer, err := t.Client().OLM.OperatorsV1alpha1().Subscriptions(namespace).Get(
+			t.Ctx(),
+			name,
+			metav1.GetOptions{},
+		)
+
+		if k8serrors.IsNotFound(err) {
+			return nil, nil
+		}
+
+		return answer, err
+	}
+}
+
+func ExtractSubscriptionInstallPlan() func(*olmV1Alpha1.Subscription) string {
+	return func(in *olmV1Alpha1.Subscription) string {
+		if in.Status.InstallPlanRef == nil {
+			return ""
+		}
+
+		return in.Status.InstallPlanRef.Name
+	}
+}
