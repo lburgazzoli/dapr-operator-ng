@@ -108,9 +108,10 @@ jobs:
           kubectl wait \
             --namespace=dapr-system \
             --for=jsonpath='{.status.connectionState.lastObservedState}'=READY \
+            --timeout=90s
             catalogsources.operators.coreos.com \
             daprio-catalog \
-            --timeout=90s
+
       - name: "Install DAPR Subscription"
         run: |
           kubectl apply -f config/samples/olm/subscription.yaml
@@ -118,21 +119,20 @@ jobs:
           kubectl wait \
             --namespace=dapr-system \
             --for=jsonpath='{.status.installPlanGeneration}'=1 \
-            subscriptions.operators.coreos.com \
             --timeout=90s \
+            subscriptions.operators.coreos.com \
             dapr-operator
           
           kubectl wait \
             --namespace=dapr-system \
             --for=condition=Installed \
-            installplans.operators.coreos.com \
             --selector=operators.coreos.com/dapr-operator-ng.dapr-system  \
             --timeout=90s
+            installplans.operators.coreos.com \
           
           kubectl wait \
             --namespace=dapr-system \
             --for=condition=ready \
-            pod \
             --selector=control-plane=dapr-control-plane \
-            --timeout=90s
-          
+            --timeout=90s \
+            pod           
