@@ -121,9 +121,9 @@ test: manifests generate fmt vet ## Run tests.
 test/e2e/operator: manifests generate fmt vet ## Run e2e operator tests.
 	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/operator/...
 
-.PHONY: test/e2e/bundle
-test/e2e/bundle: ## Run e2e catalog tests.
-	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/bundle/...
+.PHONY: test/e2e/olm
+test/e2e/olm: ## Run e2e catalog tests.
+	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/olm/...
 
 ##@ Build
 

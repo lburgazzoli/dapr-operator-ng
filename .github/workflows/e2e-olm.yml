@@ -1,4 +1,4 @@
-name: "e2e - bundle"
+name: "e2e - olm"
 
 on:
   workflow_call:
@@ -43,7 +43,7 @@ jobs:
                     
           make catalog/build
           make catalog/push
-  e2e-bundle:
+  e2e-olm:
     runs-on: ubuntu-latest
     needs:
       - images
@@ -89,9 +89,9 @@ jobs:
             --selector=app=catalog-operator \
             --timeout=90s
 
-      - name: "Run bundle e2e"
+      - name: "Run olm e2e"
         run: |
-          make test/e2e/bundle
+          make test/e2e/olm
 
 #      - name: "SetUp DAPR Resources"
 #        run: |

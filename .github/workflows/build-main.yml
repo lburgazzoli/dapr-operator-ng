@@ -17,13 +17,13 @@ jobs:
     uses: ./.github/workflows/e2e-operator.yml
     needs:
       - build
-  e2e-bundle:
-    uses: ./.github/workflows/e2e-bundle.yml
+  e2e-olm:
+    uses: ./.github/workflows/e2e-olm.yml
     needs:
       - build
   publish:
     needs:
-      - e2e-operator
+      - e2e-olm
       - e2e-bundle
     uses: ./.github/workflows/publish.yml
     with:
