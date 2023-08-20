@@ -117,7 +117,14 @@ jobs:
           
           kubectl wait \
             --namespace=dapr-system \
-           --for=condition=Installed \
+            --for=jsonpath='{.status.installPlanGeneration}' \
+            subscriptions.operators.coreos.com \
+            --timeout=90s \
+            dapr-operator
+          
+          kubectl wait \
+            --namespace=dapr-system \
+            --for=condition=Installed \
             installplans.operators.coreos.com \
             --selector=operators.coreos.com/dapr-operator-ng.dapr-system  \
             --timeout=90s
