@@ -88,51 +88,56 @@ jobs:
             pod \
             --selector=app=catalog-operator \
             --timeout=90s
-      - name: "SetUp DAPR Resources"
-        run: |
-          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/operator_group.yaml          
-          yq -i '.spec.image = strenv(CATALOG_CONTAINER_IMAGE)' config/samples/olm/catalog.yaml
-          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/catalog.yaml          
-          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/subscription.yaml
-          yq -i '.spec.sourceNamespace = "dapr-system"' config/samples/olm/subscription.yaml
-      - name: "Create DAPR namespace"
-        run: |
-          kubectl create ns dapr-system
-      - name: "Install DAPR OperatorGroup"
-        run: |
-          kubectl apply -f config/samples/olm/operator_group.yaml
-      - name: "Install DAPR Catalog"
-        run: |
-          kubectl apply -f config/samples/olm/catalog.yaml
-                    
-          kubectl wait \
-            --namespace=dapr-system \
-            --for=jsonpath='{.status.connectionState.lastObservedState}'=READY \
-            --timeout=90s \
-            catalogsources.operators.coreos.com \
-            daprio-catalog
 
-      - name: "Install DAPR Subscription"
+      - name: "Run bundle e2e"
         run: |
-          kubectl apply -f config/samples/olm/subscription.yaml
-          
-          kubectl wait \
-            --namespace=dapr-system \
-            --for=jsonpath='{.status.installPlanGeneration}'=1 \
-            --timeout=90s \
-            subscriptions.operators.coreos.com \
-            dapr-operator
-          
-          kubectl wait \
-            --namespace=dapr-system \
-            --for=condition=Installed \
-            --selector=operators.coreos.com/dapr-operator-ng.dapr-system  \
-            --timeout=90s \
-            installplans.operators.coreos.com
-          
-          kubectl wait \
-            --namespace=dapr-system \
-            --for=condition=ready \
-            --selector=control-plane=dapr-control-plane \
-            --timeout=90s \
-            pod           
+          make test/e2e/bundle
+
+#      - name: "SetUp DAPR Resources"
+#        run: |
+#          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/operator_group.yaml
+#          yq -i '.spec.image = strenv(CATALOG_CONTAINER_IMAGE)' config/samples/olm/catalog.yaml
+#          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/catalog.yaml
+#          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/subscription.yaml
+#          yq -i '.spec.sourceNamespace = "dapr-system"' config/samples/olm/subscription.yaml
+#      - name: "Create DAPR namespace"
+#        run: |
+#          kubectl create ns dapr-system
+#      - name: "Install DAPR OperatorGroup"
+#        run: |
+#          kubectl apply -f config/samples/olm/operator_group.yaml
+#      - name: "Install DAPR Catalog"
+#        run: |
+#          kubectl apply -f config/samples/olm/catalog.yaml
+#
+#          kubectl wait \
+#            --namespace=dapr-system \
+#            --for=jsonpath='{.status.connectionState.lastObservedState}'=READY \
+#            --timeout=90s \
+#            catalogsources.operators.coreos.com \
+#            daprio-catalog
+#
+#      - name: "Install DAPR Subscription"
+#        run: |
+#          kubectl apply -f config/samples/olm/subscription.yaml
+#
+#          kubectl wait \
+#            --namespace=dapr-system \
+#            --for=jsonpath='{.status.installPlanGeneration}'=1 \
+#            --timeout=90s \
+#            subscriptions.operators.coreos.com \
+#            dapr-operator
+#
+#          kubectl wait \
+#            --namespace=dapr-system \
+#            --for=condition=Installed \
+#            --selector=operators.coreos.com/dapr-operator-ng.dapr-system  \
+#            --timeout=90s \
+#            installplans.operators.coreos.com
+#
+#          kubectl wait \
+#            --namespace=dapr-system \
+#            --for=condition=ready \
+#            --selector=control-plane=dapr-control-plane \
+#            --timeout=90s \
+#            pod

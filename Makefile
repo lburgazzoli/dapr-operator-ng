@@ -117,9 +117,13 @@ vet: ## Run go vet against code.
 test: manifests generate fmt vet ## Run tests.
 	go test -ldflags="$(GOLDFLAGS)" -v ./pkg/... ./internal/...
 
-.PHONY: test/e2e
-test/e2e: manifests generate fmt vet ## Run e2e tests.
-	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/...
+.PHONY: test/e2e/operator
+test/e2e/operator: manifests generate fmt vet ## Run e2e operator tests.
+	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/operator/...
+
+.PHONY: test/e2e/bundle
+test/e2e/bundle: ## Run e2e catalog tests.
+	go test -ldflags="$(GOLDFLAGS)" -v ./test/e2e/bundle/...
 
 ##@ Build
 

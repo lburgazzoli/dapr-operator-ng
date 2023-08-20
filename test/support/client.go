@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	olmAC "github.com/operator-framework/operator-lifecycle-manager/pkg/api/client/clientset/versioned"
+
 	daprCP "github.com/lburgazzoli/dapr-operator-ng/internal/controller/operator"
 	daprAC "github.com/lburgazzoli/dapr-operator-ng/pkg/client/operator/clientset/versioned/typed/operator/v1alpha1"
 
@@ -23,6 +25,7 @@ type Client struct {
 	Dapr      daprClient.Interface
 	DaprCP    daprAC.DaprControlPlaneInterface
 	Discovery discovery.DiscoveryInterface
+	OLM       olmAC.Interface
 
 	//nolint:unused
 	scheme *runtime.Scheme
@@ -61,11 +64,17 @@ func newClient() (*Client, error) {
 		return nil, err
 	}
 
+	oClient, err := olmAC.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	c := Client{
 		Interface: kubeClient,
 		Discovery: discoveryClient,
 		Dapr:      dClient,
 		DaprCP:    dClient.OperatorV1alpha1().DaprControlPlanes(daprCP.DaprControlPlaneNamespace),
+		OLM:       oClient,
 		config:    cfg,
 	}
 
