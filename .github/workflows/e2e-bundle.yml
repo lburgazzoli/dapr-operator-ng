@@ -95,6 +95,9 @@ jobs:
           yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/catalog.yaml          
           yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/subscription.yaml
           yq -i '.spec.sourceNamespace = "dapr-system"' config/samples/olm/subscription.yaml
+      - name: "Create DAPR namespace"
+        run: |
+          kubectl create ns dapr-system
       - name: "Install DAPR OperatorGroup"
         run: |
           kubectl apply -f config/samples/olm/operator_group.yaml
