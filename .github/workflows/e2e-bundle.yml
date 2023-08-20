@@ -90,11 +90,11 @@ jobs:
             --timeout=90s
       - name: "SetUp DAPR Resources"
         run: |
-          yq -i '.metadata.namespace = dapr-system' config/samples/olm/operator_group.yaml          
+          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/operator_group.yaml          
           yq -i '.spec.image = strenv(CATALOG_CONTAINER_IMAGE)' config/samples/olm/catalog.yaml
-          yq -i '.metadata.namespace = dapr-system' config/samples/olm/catalog.yaml          
-          yq -i '.metadata.namespace = dapr-system' config/samples/olm/subscription.yaml
-          yq -i '.spec.sourceNamespace = dapr-system' config/samples/olm/subscription.yaml
+          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/catalog.yaml          
+          yq -i '.metadata.namespace = "dapr-system"' config/samples/olm/subscription.yaml
+          yq -i '.spec.sourceNamespace = "dapr-system"' config/samples/olm/subscription.yaml
       - name: "Install DAPR OperatorGroup"
         run: |
           kubectl apply -f config/samples/olm/operator_group.yaml
