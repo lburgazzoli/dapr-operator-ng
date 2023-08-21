@@ -71,6 +71,11 @@ spec:
         - --leader-election=true
         image: controller:latest
         name: dapr-control-plane
+        env:
+          - name: DAPR_CONTROL_PLANE_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:

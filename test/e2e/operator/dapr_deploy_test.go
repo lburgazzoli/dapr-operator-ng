@@ -39,7 +39,7 @@ func TestDaprDeployWrongCR(t *testing.T) {
 	instance := test.NewNamespacedNameDaprControlPlane(
 		types.NamespacedName{
 			Name:      xid.New().String(),
-			Namespace: daprCP.DaprControlPlaneNamespace,
+			Namespace: daprCP.DaprControlPlaneNamespaceDefault,
 		},
 		daprAc.DaprControlPlaneSpec().
 			WithValues(nil),

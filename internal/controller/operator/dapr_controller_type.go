@@ -21,8 +21,9 @@ const (
 
 	HelmChartsDir = "helm-charts/dapr"
 
-	DaprControlPlaneName      = "dapr-control-plane"
-	DaprControlPlaneNamespace = "dapr-system"
+	DaprControlPlaneName             = "dapr-control-plane"
+	DaprControlPlaneNamespaceDefault = "dapr-system"
+	DaprControlPlaneNamespaceEnv     = "DAPR_CONTROL_PLANE_NAMESPACE"
 
 	DaprConditionReconcile                      = "Reconcile"
 	DaprPhaseError                              = "Error"

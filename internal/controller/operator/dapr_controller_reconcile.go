@@ -19,6 +19,7 @@ package operator
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 
 	daprvApi "github.com/lburgazzoli/dapr-operator-ng/api/operator/v1alpha1"
@@ -65,7 +66,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	if req.Name != DaprControlPlaneName || req.Namespace != DaprControlPlaneNamespace {
+	// by default, the controller expect the DaprControlPlane resource to be created
+	// in the same namespace where it runs, if not fallback to the default namespace
+	// dapr-system
+	ns := os.Getenv(DaprControlPlaneNamespaceEnv)
+	if ns == "" {
+		ns = DaprControlPlaneNamespaceDefault
+	}
+
+	if req.Name != DaprControlPlaneName || req.Namespace != ns {
 		rr.Resource.Status.Phase = DaprPhaseError
 
 		meta.SetStatusCondition(&rr.Resource.Status.Conditions, metav1.Condition{
@@ -75,7 +84,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Message: fmt.Sprintf(
 				"Unsupported resource, the operator handles a single resource named %s in namespace %s",
 				DaprControlPlaneName,
-				DaprControlPlaneNamespace),
+				ns),
 		})
 
 		err = r.Status().Update(ctx, rr.Resource)
