@@ -73,7 +73,7 @@ func newClient() (*Client, error) {
 		Interface: kubeClient,
 		Discovery: discoveryClient,
 		Dapr:      dClient,
-		DaprCP:    dClient.OperatorV1alpha1().DaprControlPlanes(daprCP.DaprControlPlaneNamespace),
+		DaprCP:    dClient.OperatorV1alpha1().DaprControlPlanes(daprCP.DaprControlPlaneNamespaceDefault),
 		OLM:       oClient,
 		config:    cfg,
 	}

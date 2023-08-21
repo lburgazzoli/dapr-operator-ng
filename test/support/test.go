@@ -104,31 +104,10 @@ func (t *T) NewDaprControlPlane(
 	spec *daprAc.DaprControlPlaneSpecApplyConfiguration,
 ) *v1alpha1.DaprControlPlane {
 
-	cp := t.Client().DaprCP
-
-	instance, err := cp.Apply(
-		t.Ctx(),
-		daprAc.DaprControlPlane(daprCP.DaprControlPlaneName, daprCP.DaprControlPlaneNamespace).
-			WithSpec(spec),
-		metav1.ApplyOptions{
-			FieldManager: "dapr-e2e-" + t.T().Name(),
-		})
-
-	t.Expect(err).
-		ToNot(gomega.HaveOccurred())
-
-	t.T().Cleanup(func() {
-		t.Expect(
-			cp.Delete(t.Ctx(), instance.Name, metav1.DeleteOptions{
-				PropagationPolicy: pointer.Any(metav1.DeletePropagationForeground),
-			}),
-		).ToNot(gomega.HaveOccurred())
-	})
-
 	return t.NewNamespacedNameDaprControlPlane(
 		types.NamespacedName{
 			Name:      daprCP.DaprControlPlaneName,
-			Namespace: daprCP.DaprControlPlaneNamespace,
+			Namespace: daprCP.DaprControlPlaneNamespaceDefault,
 		},
 		spec,
 	)
