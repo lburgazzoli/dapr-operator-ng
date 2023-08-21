@@ -9,4 +9,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/lburgazzoli/dapr-operator-ng
-  newTag: main-475fb81f40ec7bef35a83579a795259eea2231a0
+  newTag: 1.11.0

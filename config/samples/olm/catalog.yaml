@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
   name: daprio-catalog
-  namespace: dapr-system
+  namespace: openshift-marketplace
 spec:
   sourceType: grpc
   image: quay.io/lburgazzoli/dapr-operator-ng-catalog:latest

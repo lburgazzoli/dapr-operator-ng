@@ -41,9 +41,11 @@ spec:
   links:
   - name: Dapr
     url: https://dapr.io
+  - name: Dapr Kubernetes Operator
+    url: https://github.com/dapr-sandbox/dapr-kubernetes-operator
   maintainers:
-  - email: lburgazzoli@gmail.com
-    name: lburgazzoli
+  - email: "lburgazzoli@gmail.com"
+    name: "Luca Burgazzoli"
   maturity: alpha
   minKubeVersion: 1.22.0
   provider:
