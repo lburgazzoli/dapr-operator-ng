@@ -222,7 +222,7 @@ bundle/generate: generate manifests kustomize operator-sdk yq ## Generate bundle
 	$(PROJECT_PATH)/hack/scripts/gen_bundle.sh \
 		$(PROJECT_PATH) \
 		$(PROJECT_NAME) \
-		$(PROJECT_VERSION)
+		$(BUNDLE_VERSION)
 
 .PHONY: bundle/build
 bundle/build: ## Build bundle image.
