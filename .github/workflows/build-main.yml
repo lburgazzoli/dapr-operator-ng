@@ -28,7 +28,7 @@ jobs:
     uses: ./.github/workflows/publish.yml
     with:
       version: "${{ github.ref_name }}-${{ github.sha }}"
-      olm: false
+      olm: true
     secrets:
       registry: "quay.io"
       registry-username: ${{ secrets.QUAY_USERNAME }}
